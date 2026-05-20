@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --font-sans: "Pretendard", sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* 공통 색상 */
+  --color-bg: #f4f2ed;
+  --color-card: #fffefa;
+  --color-line: #d8d8d3;
+  --color-text: #0f1724;
+  --color-muted: #6f6f6a;
+  --color-brand: #4168ae;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* 하늘 */
+  --color-sky-from: #87ceeb;
+  --color-sky-to: #4a90e2;
+  --color-sky-vivid: #4a90e2;
+  --color-sky-text: #062456;
+  --color-sky-icon: #185fa5;
+
+  /* 땅 */
+  --color-land-from: #a8c66c;
+  --color-land-to: #4a8b3a;
+  --color-land-vivid: #4a8b3a;
+  --color-land-text: #18320f;
+  --color-land-icon: #3b6d11;
+
+  /* 바다 */
+  --color-sea-from: #1e5f8e;
+  --color-sea-to: #003d5c;
+  --color-sea-vivid: #1e5f8e;
+  --color-sea-text: #062456;
+  --color-sea-icon: #143968;
+
+  /* 폰트 크기 */
+  --text-heading: 27px;
+  --text-heading-sm: 22px;
+  --text-body: 16px;
+  --text-body-sm: 14px;
+  --text-label: 13px;
+  --text-caption: 12px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: "Pretendard", sans-serif;
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: var(--text-label);
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    border: none;
+  }
+
+  .btn:hover {
+    opacity: 0.85;
+  }
+
+  .btn-primary {
+    background-color: var(--color-brand);
+    color: #fff;
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-text);
+    border: 1.5px solid var(--color-line);
+  }
+
+  .btn-ghost:hover {
+    opacity: 1;
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+  }
+
+  .card {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: 0.75rem;
+  }
+
+  .card-interactive {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(15, 23, 36, 0.08);
+  }
 }
