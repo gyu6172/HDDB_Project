@@ -1,0 +1,45 @@
+1차 필터링 키워드★
+[하늘 sky]
+    - bird: 새, 철새, 멸종위기 조류
+    - space: 우주, 천문, 위성, 로켓
+    - weather: 날씨, 기후, 태풍, 기후변화
+
+[땅 land]
+    - disaster: 지진, 산불, 홍수, 화산 등 자연재해
+    - animal: 육상 동물, 멸종위기 종, 생태계
+    - ground_pollution: 토양/지하수 오염, 폐기물
+
+[바다 sea]
+    - marine_life: 어류, 해양 포유류, 산호
+    - deep_sea : 심해 탐사, 해저 지형
+    - ocean_pollution: 해양 플라스틱, 기름유출, 적조
+
+
+최종 저장된 카테고리 별 현황
+
+하늘 (sky)
+weather (날씨): 9건
+bird (새): 2건
+space (우주): 1건
+
+땅 (land)
+ground_pollution (토양오염): 10건
+animal (동물): 6건
+disaster (재난): 5건
+
+바다 (sea)
+deep_sea (심해): 15건 ← 최다
+ocean_pollution (해양오염): 3건
+marine_life (해양생물): 2건
+
+
+
+필터링 현황
+
+RSS에서 받은 기사:        약 580건
+중복으로 건너뜀:           약 160건
+키워드 필터에서 탈락:        319건 
+AI한테 물어본 기사:          212건
+AI가 "자연 관련" 으로 판정:    50건
+AI가 "무관" 으로 판정:        약 160건
+  → 580건 입력 → 50건 저장 (저장률 약 8.6%)
