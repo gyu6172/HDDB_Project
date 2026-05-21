@@ -5,11 +5,13 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
+    Table,
     Text,
     UniqueConstraint,
     func,
@@ -19,6 +21,25 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
     pass
+
+
+# 다대다 조인 테이블: 한 기사가 여러 카테고리에 속할 수 있음.
+article_categories = Table(
+    "article_categories",
+    Base.metadata,
+    Column(
+        "article_id",
+        Integer,
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "category_id",
+        Integer,
+        ForeignKey("categories.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+)
 
 
 class Source(Base):
@@ -37,6 +58,24 @@ class Source(Base):
 
     def __repr__(self) -> str:
         return f"<Source {self.id} {self.language} {self.name!r}>"
+
+
+class Category(Base):
+    """미리 정의된 분류 카테고리. group은 sky/land/sea, slug는 bird/space 등."""
+
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    group: Mapped[str] = mapped_column(String(16), nullable=False)  # sky / land / sea
+    label_ko: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    articles: Mapped[list["Article"]] = relationship(
+        secondary=article_categories, back_populates="categories"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Category {self.group}/{self.slug}>"
 
 
 class Article(Base):
@@ -63,6 +102,9 @@ class Article(Base):
     )
 
     source: Mapped[Source] = relationship(back_populates="articles")
+    categories: Mapped[list[Category]] = relationship(
+        secondary=article_categories, back_populates="articles"
+    )
 
     def __repr__(self) -> str:
         return f"<Article {self.id} [{self.language}] {self.title[:40]!r}>"

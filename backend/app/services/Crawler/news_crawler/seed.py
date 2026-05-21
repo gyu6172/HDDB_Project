@@ -6,8 +6,9 @@ from pathlib import Path
 import yaml
 from sqlalchemy import select
 
+from .classifier import CATEGORY_DEFS
 from .db import SessionLocal
-from .models import Source
+from .models import Category, Source
 
 SOURCES_FILE = Path(__file__).resolve().parent.parent / "config" / "sources.yaml"
 
@@ -50,3 +51,22 @@ def sync_sources() -> tuple[int, int]:
                     updated += 1
         session.commit()
     return added, updated
+
+
+def sync_categories() -> int:
+    """classifier.CATEGORY_DEFS 를 categories 테이블에 시드/동기화. 추가된 행 수 반환."""
+    added = 0
+    with SessionLocal() as session:
+        for group, slug, label_ko, _desc in CATEGORY_DEFS:
+            existing = session.scalar(select(Category).where(Category.slug == slug))
+            if existing is None:
+                session.add(Category(slug=slug, group=group, label_ko=label_ko))
+                added += 1
+            else:
+                # 라벨/그룹은 코드 정의가 진실의 원천.
+                if existing.group != group:
+                    existing.group = group
+                if existing.label_ko != label_ko:
+                    existing.label_ko = label_ko
+        session.commit()
+    return added

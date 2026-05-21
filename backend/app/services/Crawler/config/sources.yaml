@@ -1,36 +1,64 @@
 # 등록된 RSS 소스 목록. `python -m news_crawler init` 실행 시 DB에 시드됩니다.
 # 추가/삭제 후 `python -m news_crawler sync-sources` 로 DB와 동기화할 수 있습니다.
+#
+# 주의: sync-sources 는 YAML에서 빠진 소스를 자동으로 비활성화하지 않습니다.
+# 기존 일반뉴스 소스를 끄려면 list-sources 후 DB에서 active=False 로 바꾸거나
+# news.db 를 지우고 init 부터 다시 하세요.
 
-# --- 국내 (ko) ---
+# =========================================================
+# 국내 (ko)
+# =========================================================
+- name: 경향신문 - 사회(환경/재난 포함)
+  url: https://www.khan.co.kr/rss/rssdata/society_news.xml
+  language: ko
+
 - name: 연합뉴스 - 전체
   url: https://www.yna.co.kr/rss/news.xml
   language: ko
 
-- name: 한겨레 - 전체
-  url: https://www.hani.co.kr/rss/
-  language: ko
-
-- name: KBS 뉴스 - 헤드라인
-  url: http://world.kbs.co.kr/rss/rss_news.htm?lang=k
-  language: ko
-
-- name: 경향신문 - 전체
-  url: https://www.khan.co.kr/rss/rssdata/total_news.xml
-  language: ko
-
-# --- 해외 (en) ---
-- name: BBC News - World
-  url: https://feeds.bbci.co.uk/news/world/rss.xml
+# =========================================================
+# 해외 (en) — Science / Environment / Climate / Space 전문
+# =========================================================
+- name: BBC News - Science & Environment
+  url: https://feeds.bbci.co.uk/news/science_and_environment/rss.xml
   language: en
 
-- name: Reuters - World
-  url: https://feeds.reuters.com/Reuters/worldNews
+- name: The Guardian - Environment
+  url: https://www.theguardian.com/environment/rss
   language: en
 
-- name: The Guardian - World
-  url: https://www.theguardian.com/world/rss
+- name: The Guardian - Science
+  url: https://www.theguardian.com/science/rss
   language: en
 
-- name: NYT - World
-  url: https://rss.nytimes.com/services/xml/rss/nyt/World.xml
+- name: NASA - Breaking News
+  url: https://www.nasa.gov/news-release/feed/
+  language: en
+
+- name: NYT - Climate
+  url: https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml
+  language: en
+
+- name: NYT - Science
+  url: https://rss.nytimes.com/services/xml/rss/nyt/Science.xml
+  language: en
+
+- name: ScienceDaily - Earth & Climate
+  url: https://www.sciencedaily.com/rss/earth_climate.xml
+  language: en
+
+- name: ScienceDaily - Plants & Animals
+  url: https://www.sciencedaily.com/rss/plants_animals.xml
+  language: en
+
+- name: ScienceDaily - Space & Time
+  url: https://www.sciencedaily.com/rss/space_time.xml
+  language: en
+
+- name: Phys.org - Earth Sciences
+  url: https://phys.org/rss-feed/earth-news/
+  language: en
+
+- name: Phys.org - Astronomy & Space
+  url: https://phys.org/rss-feed/space-news/
   language: en

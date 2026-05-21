@@ -1,14 +1,22 @@
 """CLI 진입점.
 
+사전 준비:
+    1) `pip install -r requirements.txt`
+    2) .env 파일 또는 환경변수에 `GEMINI_API_KEY=...` 설정.
+       (https://aistudio.google.com 에서 무료 발급)
+    3) (선택) MAX_ARTICLES_TOTAL=50  # 한 번 crawl 시 저장할 최대 기사 수
+       (선택) GEMINI_MODEL=gemini-2.0-flash
+
 사용 예:
-    python -m news_crawler init                       # 테이블 생성 + sources.yaml 시드
-    python -m news_crawler sync-sources               # sources.yaml 변경 후 DB와 동기화
-    python -m news_crawler crawl                      # 모든 활성 소스에서 수집
-    python -m news_crawler crawl --lang ko            # ko 소스만 수집
+    python -m news_crawler init                       # 테이블 + 소스/카테고리 시드
+    python -m news_crawler sync-sources               # YAML/카테고리 변경 후 DB 동기화
+    python -m news_crawler crawl                      # 자연 관련 기사만 분류해 저장
+    python -m news_crawler crawl --lang ko            # ko 소스만
     python -m news_crawler list-sources
-    python -m news_crawler show --limit 10            # 최근 기사 텍스트로 출력
-    python -m news_crawler show --lang en --full      # 영어 + 본문 전체
-    python -m news_crawler export news.txt --limit 50 # 텍스트 파일로 저장
+    python -m news_crawler show --limit 10                       # 최근 기사
+    python -m news_crawler show --group sea --limit 10           # 바다 카테고리만
+    python -m news_crawler show --category marine_life           # 해양생물만
+    python -m news_crawler export news.txt --limit 50            # 파일로 저장
 """
 from __future__ import annotations
 
@@ -19,34 +27,53 @@ from pathlib import Path
 
 from sqlalchemy import select
 
+from .classifier import OllamaClassifier, OllamaUnavailable
 from .crawler import crawl_all
 from .db import SessionLocal, init_db
 from .models import Article, Source
-from .seed import sync_sources
+from .seed import sync_categories, sync_sources
 from .viewer import export_articles_to_file, fetch_articles, render_articles
 
 
 def _cmd_init(_: argparse.Namespace) -> int:
     init_db()
     added, updated = sync_sources()
-    print(f"DB ready. sources: +{added} added, {updated} updated.")
+    cat_added = sync_categories()
+    print(
+        f"DB ready. sources: +{added} added, {updated} updated. "
+        f"categories: +{cat_added} added."
+    )
     return 0
 
 
 def _cmd_sync(_: argparse.Namespace) -> int:
     added, updated = sync_sources()
-    print(f"sources: +{added} added, {updated} updated.")
+    cat_added = sync_categories()
+    print(f"sources: +{added} added, {updated} updated. categories: +{cat_added} added.")
     return 0
 
 
 def _cmd_crawl(args: argparse.Namespace) -> int:
     init_db()  # DB가 비어 있어도 바로 동작하도록 보장
-    results = crawl_all(language=args.lang)
+    try:
+        classifier = OllamaClassifier()
+    except OllamaUnavailable as exc:
+        print(f"[ERROR] {exc}")
+        return 2
+    results = crawl_all(language=args.lang, classifier=classifier)
     total_new = sum(r.inserted for r in results)
+    total_prefiltered = sum(r.prefiltered for r in results)
     for r in results:
-        flag = f"ERROR: {r.error}" if r.error else f"new={r.inserted} skip={r.skipped}"
+        if r.error:
+            flag = f"ERROR: {r.error}"
+        else:
+            flag = f"new={r.inserted} skip={r.skipped} prefiltered={r.prefiltered}"
         print(f"[{r.source}] fetched={r.fetched} {flag}")
-    print(f"\nTotal new articles: {total_new}")
+    print(
+        f"\nTotal new articles: {total_new}  "
+        f"(prefiltered without LLM call: {total_prefiltered}, "
+        f"Ollama calls used: {classifier.call_count}, model: {classifier.model_name})"
+    )
     return 0
 
 
@@ -62,13 +89,25 @@ def _cmd_list_sources(_: argparse.Namespace) -> int:
 
 
 def _cmd_show(args: argparse.Namespace) -> int:
-    articles = fetch_articles(language=args.lang, source=args.source, limit=args.limit)
+    articles = fetch_articles(
+        language=args.lang,
+        source=args.source,
+        category=args.category,
+        group=args.group,
+        limit=args.limit,
+    )
     print(render_articles(articles, full=args.full))
     return 0
 
 
 def _cmd_export(args: argparse.Namespace) -> int:
-    articles = fetch_articles(language=args.lang, source=args.source, limit=args.limit)
+    articles = fetch_articles(
+        language=args.lang,
+        source=args.source,
+        category=args.category,
+        group=args.group,
+        limit=args.limit,
+    )
     text = render_articles(articles, full=args.full)
     path = export_articles_to_file(text, Path(args.path))
     print(f"saved {len(articles)} articles -> {path.resolve()}")
@@ -102,6 +141,13 @@ def main(argv: list[str] | None = None) -> int:
     def _add_view_filters(p: argparse.ArgumentParser) -> None:
         p.add_argument("--lang", choices=["ko", "en"], help="filter by language")
         p.add_argument("--source", help="filter by source name (substring match)")
+        p.add_argument(
+            "--category",
+            help="filter by category slug (예: bird, marine_life, disaster ...)",
+        )
+        p.add_argument(
+            "--group", choices=["sky", "land", "sea"], help="filter by category group"
+        )
         p.add_argument("--limit", type=int, default=20, help="max articles (default 20)")
         p.add_argument("--full", action="store_true", help="print full body instead of preview")
 
