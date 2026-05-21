@@ -10,4 +10,4 @@ class ArticleKeyword(Base):
     id         = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     article_id = Column(String, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
     text       = Column(Text, nullable=False)
-    embedding  = Column(Vector(768))
+    embedding  = Column(Vector(3072))

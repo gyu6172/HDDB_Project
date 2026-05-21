@@ -19,7 +19,7 @@ def upgrade():
             id         VARCHAR PRIMARY KEY,
             article_id VARCHAR NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
             text       TEXT NOT NULL,
-            embedding  vector(768)
+            embedding  vector(3072)
         )
     """)
     op.execute("""

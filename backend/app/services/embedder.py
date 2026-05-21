@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.models.keyword import ArticleKeyword
 
 _client = genai.Client(api_key=settings.gemini_api_key)
-_MODEL = "text-embedding-004"
+_MODEL = "models/gemini-embedding-001"
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
