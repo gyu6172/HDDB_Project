@@ -1,22 +1,30 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.keyword import ArticleKeyword
 
-genai.configure(api_key=settings.gemini_api_key)
-
-_MODEL = "models/text-embedding-004"
+_client = genai.Client(api_key=settings.gemini_api_key)
+_MODEL = "text-embedding-004"
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     return [
-        genai.embed_content(model=_MODEL, content=text, task_type="retrieval_document")["embedding"]
+        list(_client.models.embed_content(
+            model=_MODEL,
+            contents=text,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+        ).embeddings[0].values)
         for text in texts
     ]
 
 
 def embed_query(query: str) -> list[float]:
-    return genai.embed_content(model=_MODEL, content=query, task_type="retrieval_query")["embedding"]
+    return list(_client.models.embed_content(
+        model=_MODEL,
+        contents=query,
+        config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+    ).embeddings[0].values)
 
 
 def embed_article(article_id: str, title: str, paragraph_summary: list | None, db: Session) -> None:

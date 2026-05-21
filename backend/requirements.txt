@@ -8,5 +8,5 @@ psycopg2-binary
 httpx
 feedparser
 apscheduler
-google-generativeai
+google-genai
 pgvector
