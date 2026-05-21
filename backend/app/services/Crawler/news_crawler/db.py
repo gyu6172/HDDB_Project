@@ -1,30 +1,21 @@
-"""DB 엔진/세션 설정. DATABASE_URL 환경변수로 어떤 DB든 연결 가능."""
+"""DB 엔진/세션: main project의 app.core.database 를 그대로 사용한다.
+
+이전에는 별도 sqlite news.db 에 저장했지만, 이제는 메인 프로젝트의
+PostgreSQL DB(또는 DATABASE_URL 로 설정된 어떤 DB든)에 직접 기사를 저장한다.
+"""
 from __future__ import annotations
 
-import os
-from pathlib import Path
+from app.core.database import Base, SessionLocal, engine
 
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from .models import Base
-
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///news.db")
-
-# SQLite는 멀티스레드 옵션이 필요. 다른 DB는 영향 없음.
-_connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-
-engine = create_engine(DATABASE_URL, connect_args=_connect_args, future=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+__all__ = ["Base", "SessionLocal", "engine", "init_db"]
 
 
 def init_db() -> None:
-    """등록된 모든 모델로부터 테이블을 생성한다(이미 있으면 그대로 둠)."""
-    # SQLite 파일 경로가 상대경로면 프로젝트 루트 기준으로 만들어 둔다.
-    if DATABASE_URL.startswith("sqlite:///") and not DATABASE_URL.startswith("sqlite:////"):
-        db_file = DATABASE_URL.replace("sqlite:///", "", 1)
-        Path(db_file).parent.mkdir(parents=True, exist_ok=True)
+    """등록된 모든 모델로 테이블을 생성한다 (개발/테스트 편의용).
+
+    운영 환경에서는 `alembic upgrade head` 로 마이그레이션을 적용하는 것이 정석이다.
+    """
+    import app.models.article  # noqa: F401
+    import app.models.category  # noqa: F401
+
     Base.metadata.create_all(bind=engine)

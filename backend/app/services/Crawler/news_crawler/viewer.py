@@ -6,22 +6,15 @@ from pathlib import Path
 from typing import Iterable
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 
 from .db import SessionLocal
-from .models import Article, Category, Source
+from .models import Article, Category, Subcategory
 from .text import clean_for_display
 
 
 def _fmt_dt(dt: datetime | None) -> str:
     return dt.strftime("%Y-%m-%d %H:%M") if dt else "-"
-
-
-def _fmt_categories(cats: Iterable[Category]) -> str:
-    items = sorted(cats, key=lambda c: (c.group, c.slug))
-    if not items:
-        return "(없음)"
-    return ", ".join(f"{c.group}/{c.slug}({c.label_ko})" for c in items)
 
 
 def fetch_articles(
@@ -35,39 +28,44 @@ def fetch_articles(
     with SessionLocal() as session:
         stmt = (
             select(Article)
-            .options(joinedload(Article.source), selectinload(Article.categories))
+            .options(
+                joinedload(Article.category_rel),
+                joinedload(Article.subcategory_rel),
+            )
             .order_by(Article.published_at.desc().nullslast(), Article.id.desc())
             .limit(limit)
         )
         if language:
-            stmt = stmt.where(Article.language == language)
+            stmt = stmt.where(Article.source_lang == language)
         if source:
-            stmt = stmt.join(Source).where(Source.name.like(f"%{source}%"))
-        if category or group:
-            stmt = stmt.join(Article.categories)
-            if category:
-                stmt = stmt.where(Category.slug == category)
-            if group:
-                stmt = stmt.where(Category.group == group)
+            stmt = stmt.where(Article.source.like(f"%{source}%"))
+        if category:
+            stmt = stmt.join(Article.subcategory_rel).where(Subcategory.key == category)
+        if group:
+            stmt = stmt.join(Article.category_rel).where(Category.key == group)
         return list(session.scalars(stmt).unique())
 
 
 def render_articles(articles: Iterable[Article], *, full: bool = False) -> str:
-    """기사를 사람이 읽기 좋은 텍스트 블록으로 변환."""
     blocks: list[str] = []
     for a in articles:
-        body = clean_for_display(a.content)
+        body = clean_for_display(a.original_content or "")
         if not full and len(body) > 400:
             body = body[:400].rstrip() + " ..."
+        cat = a.category_rel
+        sub = a.subcategory_rel
+        cat_label = (
+            f"{cat.key}/{sub.key}({sub.label})" if cat and sub else "(없음)"
+        )
         blocks.append(
             "\n".join(
                 [
                     "=" * 78,
-                    f"[{a.language}] {a.title}",
-                    f"출처     : {a.source.name}",
-                    f"카테고리 : {_fmt_categories(a.categories)}",
-                    f"발행일   : {_fmt_dt(a.published_at)}    수집일: {_fmt_dt(a.fetched_at)}",
-                    f"URL      : {a.url}",
+                    f"[{a.source_lang}] {a.title}",
+                    f"출처     : {a.source}",
+                    f"카테고리 : {cat_label}",
+                    f"발행일   : {_fmt_dt(a.published_at)}    수집일: {_fmt_dt(a.created_at)}",
+                    f"URL      : {a.original_url}",
                     "-" * 78,
                     body or "(본문 없음 — 원문 링크 참고)",
                 ]
