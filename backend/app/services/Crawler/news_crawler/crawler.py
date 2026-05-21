@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import mktime
@@ -18,6 +17,7 @@ from sqlalchemy.orm import Session
 from .classifier import OllamaClassifier, passes_prefilter
 from .db import SessionLocal
 from .models import Article, Category, Source
+from .text import strip_tags
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,6 @@ MAX_ENTRIES = int(os.getenv("MAX_ENTRIES_PER_SOURCE", "50") or 0)
 # 한 번의 crawl 호출 전체에서 DB에 신규 저장할 최대 기사 수.
 MAX_ARTICLES_TOTAL = int(os.getenv("MAX_ARTICLES_TOTAL", "50") or 0)
 HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "15"))
-
-_TAG_RE = re.compile(r"<[^>]+>")
 
 
 @dataclass
@@ -63,9 +61,7 @@ def _pick_content(entry) -> str:
 
 def _plain_text(html_text: str) -> str:
     """분류기 프롬프트에 넣기 전에 HTML 태그를 단순 제거."""
-    if not html_text:
-        return ""
-    return _TAG_RE.sub(" ", html_text)
+    return strip_tags(html_text, replacement=" ")
 
 
 def _load_category_map(session: Session) -> dict[str, Category]:

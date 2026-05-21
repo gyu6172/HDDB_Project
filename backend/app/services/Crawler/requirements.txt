@@ -4,5 +4,5 @@ python-dateutil>=2.9.0
 PyYAML>=6.0.1
 python-dotenv>=1.0.1
 requests>=2.32.0
-# Ollama 는 별도 Python 패키지가 필요 없습니다. requests 로 localhost:11434 를 호출합니다.
-# 시스템에 Ollama 데스크탑 앱/CLI 가 설치돼 있어야 합니다: https://ollama.com/download
+# Ollama does not require a Python package -- we call localhost:11434 via requests.
+# The Ollama desktop app / CLI must be installed: https://ollama.com/download

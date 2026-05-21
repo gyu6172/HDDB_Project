@@ -2,10 +2,14 @@
 
 사전 준비:
     1) `pip install -r requirements.txt`
-    2) .env 파일 또는 환경변수에 `GEMINI_API_KEY=...` 설정.
-       (https://aistudio.google.com 에서 무료 발급)
-    3) (선택) MAX_ARTICLES_TOTAL=50  # 한 번 crawl 시 저장할 최대 기사 수
-       (선택) GEMINI_MODEL=gemini-2.0-flash
+    2) Ollama 설치 후 `ollama serve` 실행 (https://ollama.com/download)
+       및 사용 모델 pull: `ollama pull qwen2.5:3b`
+    3) (선택) .env 또는 환경변수:
+       OLLAMA_HOST=http://localhost:11434
+       OLLAMA_MODEL=qwen2.5:3b
+       OLLAMA_TIMEOUT=120
+       MAX_ARTICLES_TOTAL=50           # 한 번 crawl 시 저장할 최대 기사 수
+       MAX_ENTRIES_PER_SOURCE=50       # 한 소스에서 후보로 가져올 최대 RSS 엔트리 수
 
 사용 예:
     python -m news_crawler init                       # 테이블 + 소스/카테고리 시드
@@ -25,7 +29,7 @@ import logging
 import sys
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from .classifier import OllamaClassifier, OllamaUnavailable
 from .crawler import crawl_all
@@ -116,10 +120,14 @@ def _cmd_export(args: argparse.Namespace) -> int:
 
 def _cmd_stats(_: argparse.Namespace) -> int:
     with SessionLocal() as session:
-        total = session.scalar(select(Article.id).order_by(Article.id.desc()).limit(1)) or 0
-        ko = session.query(Article).filter(Article.language == "ko").count()
-        en = session.query(Article).filter(Article.language == "en").count()
-        print(f"articles: total≈{total}  ko={ko}  en={en}")
+        total = session.scalar(select(func.count()).select_from(Article)) or 0
+        ko = session.scalar(
+            select(func.count()).select_from(Article).where(Article.language == "ko")
+        ) or 0
+        en = session.scalar(
+            select(func.count()).select_from(Article).where(Article.language == "en")
+        ) or 0
+        print(f"articles: total={total}  ko={ko}  en={en}")
     return 0
 
 

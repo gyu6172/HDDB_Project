@@ -1,8 +1,6 @@
 """저장된 기사를 사람이 읽기 좋은 텍스트로 출력/내보내기."""
 from __future__ import annotations
 
-import html
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
@@ -12,21 +10,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from .db import SessionLocal
 from .models import Article, Category, Source
-
-_TAG_RE = re.compile(r"<[^>]+>")
-_WS_RE = re.compile(r"[ \t]+")
-_BLANK_RE = re.compile(r"\n{3,}")
-
-
-def _strip_html(text: str) -> str:
-    """RSS content/summary 에 포함된 HTML 태그 제거."""
-    if not text:
-        return ""
-    text = _TAG_RE.sub("", text)
-    text = html.unescape(text)
-    text = _WS_RE.sub(" ", text)
-    text = _BLANK_RE.sub("\n\n", text)
-    return text.strip()
+from .text import clean_for_display
 
 
 def _fmt_dt(dt: datetime | None) -> str:
@@ -72,7 +56,7 @@ def render_articles(articles: Iterable[Article], *, full: bool = False) -> str:
     """기사를 사람이 읽기 좋은 텍스트 블록으로 변환."""
     blocks: list[str] = []
     for a in articles:
-        body = _strip_html(a.content)
+        body = clean_for_display(a.content)
         if not full and len(body) > 400:
             body = body[:400].rstrip() + " ..."
         blocks.append(
