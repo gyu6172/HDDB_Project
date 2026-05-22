@@ -1,11 +1,23 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Article, Category } from "@/types/article";
+import { Article, Category, Subcategory } from "@/types/article";
 
-const CATEGORY_META: Record<Category, { label: string; emoji: string; bg: string; text: string }> = {
-  sky:  { label: "하늘", emoji: "☁️", bg: "bg-sky-from/30",  text: "text-sky-text" },
-  land: { label: "땅",   emoji: "🌿", bg: "bg-land-from/30", text: "text-land-text" },
-  sea:  { label: "바다", emoji: "🌊", bg: "bg-sea-from/30",  text: "text-sea-text" },
+const CATEGORY_STYLE: Record<Category, { bg: string; text: string }> = {
+  sky:  { bg: "bg-sky-from/30",  text: "text-sky-text" },
+  land: { bg: "bg-land-from/30", text: "text-land-text" },
+  sea:  { bg: "bg-sea-from/30",  text: "text-sea-text" },
+};
+
+const SUBCATEGORY_META: Record<Subcategory, { label: string; emoji: string }> = {
+  bird:            { label: "새",      emoji: "🪺" },
+  space:           { label: "우주",    emoji: "🚀" },
+  weather:         { label: "기상",    emoji: "🌤️" },
+  disaster:        { label: "자연재해", emoji: "🌋" },
+  animal:          { label: "동식물",  emoji: "🐾" },
+  pollution:       { label: "환경오염", emoji: "♻️" },
+  marine_life:     { label: "해양생물", emoji: "🐠" },
+  deep_sea:        { label: "심해",    emoji: "🧜‍♀️" },
+  ocean_pollution: { label: "해양오염", emoji: "☠️" },
 };
 
 const THUMBNAIL_BG: Record<Category, string> = {
@@ -19,8 +31,9 @@ interface Props {
 }
 
 export default function ArticleCard({ article }: Props) {
-  const { id, thumbnailUrl, title, oneLineSummary, source, publishedAt, category } = article;
-  const { label, emoji, bg, text } = CATEGORY_META[category];
+  const { id, thumbnailUrl, title, oneLineSummary, source, publishedAt, category, subcategory } = article;
+  const { bg, text } = CATEGORY_STYLE[category];
+  const { label, emoji } = SUBCATEGORY_META[subcategory];
 
   const formattedDate = new Date(publishedAt).toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -31,12 +44,12 @@ export default function ArticleCard({ article }: Props) {
   return (
     <Link href={`/articles/${id}`} className="flex flex-col card card-interactive overflow-hidden">
       {/* 썸네일 */}
-      <div className={`relative w-full aspect-[2/1] bg-gradient-to-br ${THUMBNAIL_BG[category]}`}>
+      <div className={`relative w-full aspect-[5/2] bg-gradient-to-br ${THUMBNAIL_BG[category]}`}>
         <Image src={thumbnailUrl} alt={title} fill className="object-cover" />
       </div>
 
       {/* 본문 */}
-      <div className="p-4 flex flex-col gap-2">
+      <div className="px-4 pt-3 pb-4 flex flex-col gap-2">
         <span className={`self-start text-caption font-semibold px-2.5 py-1 rounded-full ${bg} ${text}`}>
           {label} {emoji}
         </span>
