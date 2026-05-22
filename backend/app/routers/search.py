@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -8,6 +9,8 @@ from app.schemas.article import ArticleCard
 from app.services.embedder import embed_query
 
 router = APIRouter()
+
+SEARCH_THRESHOLD = float(os.getenv("SEARCH_THRESHOLD", "0.5"))
 
 
 class SearchRequest(BaseModel):
@@ -25,12 +28,13 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
                        MIN(embedding <=> CAST(:vec AS vector)) AS min_dist
                 FROM article_keywords
                 GROUP BY article_id
+                HAVING MIN(embedding <=> CAST(:vec AS vector)) < :threshold
                 ORDER BY min_dist
                 LIMIT 20
             )
             SELECT article_id FROM ranked
         """),
-        {"vec": str(query_vector)},
+        {"vec": str(query_vector), "threshold": SEARCH_THRESHOLD},
     ).fetchall()
 
     if not rows:
