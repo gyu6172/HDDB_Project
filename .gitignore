@@ -69,3 +69,21 @@ tmp/
 !.claude/commands/
 !.claude/agents/
 
+@'
+
+# Python / venv
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# secrets
+.env
+
+# 검증 산출물
+backend/hddb.db
+backend/app/services/Crawler/news.db
+backend/app/services/Crawler/news.txt
+backend/app/services/Crawler/result.txt
+'@ | Out-File -Append -Encoding utf8 .gitignore
+

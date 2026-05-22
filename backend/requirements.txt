@@ -10,3 +10,6 @@ feedparser
 apscheduler
 google-genai
 pgvector
+PyYAML
+requests
+python-dateutil
