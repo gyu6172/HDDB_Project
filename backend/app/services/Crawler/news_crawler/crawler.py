@@ -22,6 +22,7 @@ from .db import SessionLocal
 from .models import Article, Subcategory
 from .seed import load_sources_from_yaml
 from .text import strip_tags
+from app.services.embedder import embed_article
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,10 @@ def _crawl_source(
         )
         session.add(article)
         session.flush()
+        try:
+            embed_article(article.id, article.title, None, session)
+        except Exception:
+            logger.warning("임베딩 실패, 기사는 저장됨: %s", title[:60])
         inserted += 1
         logger.info("저장: [%s] %s", ",".join(slugs), title[:60])
 
