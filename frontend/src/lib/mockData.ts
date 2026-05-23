@@ -70,7 +70,7 @@ export const mockArticles: Article[] = [
     publishedAt: "2026-05-13T09:30:00Z",
     thumbnailUrl: "/images/land-pollution.jpg",
     category: "land",
-    subcategory: "pollution",
+    subcategory: "soil_pollution",
     confidence: 0.93,
   },
   {
