@@ -22,7 +22,7 @@ type MainNewsCardProps = {
 export default function MainNewsCard({
   icon,
   title,
-  titleClassName = "text-blue-700",
+  titleClassName = "text-sky-icon",
   items,
   variant = "vertical",
   moreLabel = "더보기",
@@ -41,7 +41,7 @@ export default function MainNewsCard({
         <button
           type="button"
           onClick={onMoreClick}
-          className="text-lg font-semibold text-zinc-500 hover:text-zinc-800"
+          className="text-lg font-semibold text-muted hover:text-text"
         >
           {moreLabel} ›
         </button>
