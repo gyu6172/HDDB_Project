@@ -104,6 +104,46 @@ def _build_prompt(title: str, content: str) -> str:
 3. 추측하지 말고 기사 내용에 명확히 근거가 있을 때만 분류.
 4. 반드시 다음 JSON 형식으로만 응답하세요. 다른 텍스트 금지.
 
+[카테고리 구분 규칙 — 자주 헷갈리는 케이스]
+A) 해양 생물 vs 육상 동물
+   - 고래/돌고래/상어/물고기/바다거북/물범/펭귄/산호 등 바다에서 사는 생물은 반드시
+     "marine_life" 로 분류한다. 절대 "animal" 로 분류하지 말 것.
+   - "animal" 은 육상 야생/가축 동물 전용 (사자, 코끼리, 사슴, 곰, 새는 "bird" 등).
+B) 심해 vs 그 외
+   - "deep_sea" 는 (a) 심해/해저 탐사, (b) 심해 생물 발견, (c) 해저 지형/지질,
+     (d) 해저 자원·열수공 등 "수심이 깊은 바다 환경 자체" 를 다루는 기사에만 사용.
+   - 지진·해일·빙하 붕괴는 바다에서 일어나더라도 "deep_sea" 가 아니라 "disaster".
+   - 해수면 상승·해양 순환 변화·바다 온도 변화는 "deep_sea" 가 아니라 "weather"
+     (또는 해양 생태계 영향이 핵심이면 "marine_life"/"ocean_pollution" 병기).
+   - 과거 지질사·산맥 형성처럼 "오래전 바다였다" 류 기사는 자연 카테고리 없음 → [].
+C) 해양 오염 vs 토양 오염
+   - 기름유출/해양 플라스틱/적조/해양 쓰레기 → "ocean_pollution".
+   - PFAS·중금속이 해안에서 발견되어도 "바다 환경 오염" 맥락이면 "ocean_pollution",
+     육상 폐기물·농지 오염이 주제면 "ground_pollution".
+D) 우주(space) 사용 제한
+   - 천문/위성/로켓/행성 등 우주 자체가 주제일 때만 "space".
+   - NASA 가 등장해도 지구·해양·기후를 관측한 기사면 "weather"/"ocean_pollution"/"marine_life" 등
+     해당 주제로 분류하고 "space" 는 쓰지 말 것.
+E) "sea wall(방조제)·연안 인프라·해수면 상승" 같이 바다가 주제인 기사는 적어도 하나의
+   sea 그룹 카테고리(marine_life / deep_sea / ocean_pollution) 또는 weather/disaster
+   중 적합한 것을 골라야 한다. 명백히 자연 기사인데 빈 배열을 반환하지 말 것.
+
+[예시]
+- 제목: "Humpback whale breaks migration record with 15,000 km ocean journey"
+  → {{"categories": ["marine_life"]}}   ("animal" 아님)
+- 제목: "Scientists discover hidden brakes that stop massive earthquakes"
+  → {{"categories": ["disaster"]}}      ("deep_sea" 아님)
+- 제목: "Antarctic glacier collapses at record speed"
+  → {{"categories": ["disaster", "weather"]}}
+- 제목: "Giant squid discovery uncovers a hidden deep-sea world off Australia"
+  → {{"categories": ["deep_sea", "marine_life"]}}
+- 제목: "High levels of toxic 'forever chemicals' found off coast of southern England"
+  → {{"categories": ["ocean_pollution"]}}
+- 제목: "NASA captures wild swirling clouds and rare arctic storm over Alaska"
+  → {{"categories": ["weather"]}}       ("space" 아님)
+- 제목: "Stock market hits record high amid earnings season"
+  → {{"categories": []}}
+
 [출력 형식]
 {{"categories": ["slug1", "slug2"]}}
 
