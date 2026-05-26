@@ -1,30 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Article, Category, Subcategory } from "@/types/article";
-
-const CATEGORY_STYLE: Record<Category, { bg: string; text: string }> = {
-  sky:  { bg: "bg-sky-from/30",  text: "text-sky-text" },
-  land: { bg: "bg-land-from/30", text: "text-land-text" },
-  sea:  { bg: "bg-sea-from/30",  text: "text-sea-text" },
-};
-
-const SUBCATEGORY_META: Record<Subcategory, { label: string; emoji: string }> = {
-  bird:            { label: "새",      emoji: "🪺" },
-  space:           { label: "우주",    emoji: "🚀" },
-  weather:         { label: "기상",    emoji: "🌤️" },
-  disaster:        { label: "자연재해", emoji: "🌋" },
-  animal:          { label: "동식물",  emoji: "🐾" },
-  pollution:       { label: "환경오염", emoji: "♻️" },
-  marine_life:     { label: "해양생물", emoji: "🐠" },
-  deep_sea:        { label: "심해",    emoji: "🧜‍♀️" },
-  ocean_pollution: { label: "해양오염", emoji: "☠️" },
-};
-
-const THUMBNAIL_BG: Record<Category, string> = {
-  sky:  "from-sky-from to-sky-to",
-  land: "from-land-from to-land-to",
-  sea:  "from-sea-from to-sea-to",
-};
+import { Article } from "@/types/article";
+import { CATEGORY_STYLE, SUBCATEGORY_META, THUMBNAIL_BG } from "@/constants/category";
 
 interface Props {
   article: Article;
