@@ -3,7 +3,6 @@ import logging
 import re
 
 from google import genai
-from google.api_core.exceptions import ResourceExhausted
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -12,7 +11,7 @@ from app.models.article import Article
 logger = logging.getLogger(__name__)
 
 _client = genai.Client(api_key=settings.gemini_api_key)
-_MODEL = "models/gemini-3.5-flash"
+_DEFAULT_MODEL = "models/gemini-2.5-flash"
 
 _PROMPT_TEMPLATE = """다음 뉴스 기사를 읽고 아래 JSON 형식으로 한국어 요약을 작성하세요.
 영어 기사도 반드시 한국어로 요약하세요.
@@ -59,7 +58,7 @@ def _parse_response(text: str) -> dict | None:
         return None
 
 
-def summarize_article(article_id: str, db: Session) -> list | None:
+def summarize_article(article_id: str, db: Session, model: str = _DEFAULT_MODEL) -> list | None:
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article or not article.original_content:
         return None
@@ -70,11 +69,11 @@ def summarize_article(article_id: str, db: Session) -> list | None:
     prompt = _PROMPT_TEMPLATE.format(title=article.title, content=content_snippet)
 
     try:
-        response = _client.models.generate_content(model=_MODEL, contents=prompt)
+        response = _client.models.generate_content(model=model, contents=prompt)
         result = _parse_response(response.text)
-    except ResourceExhausted:
-        raise  # 파이프라인의 retry 로직이 처리
     except Exception as e:
+        if "RESOURCE_EXHAUSTED" in str(e) or "UNAVAILABLE" in str(e):
+            raise  # 파이프라인이 처리
         logger.warning("Gemini 요약 실패: %s — %s", article.title[:60], e)
         return None
 
