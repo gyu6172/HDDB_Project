@@ -1,0 +1,8 @@
+feedparser>=6.0.11
+SQLAlchemy>=2.0.30
+python-dateutil>=2.9.0
+PyYAML>=6.0.1
+python-dotenv>=1.0.1
+requests>=2.32.0
+# Ollama does not require a Python package -- we call localhost:11434 via requests.
+# The Ollama desktop app / CLI must be installed: https://ollama.com/download
