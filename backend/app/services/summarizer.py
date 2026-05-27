@@ -3,6 +3,7 @@ import logging
 import re
 
 from google import genai
+from google.api_core.exceptions import ResourceExhausted
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -71,6 +72,8 @@ def summarize_article(article_id: str, db: Session) -> list | None:
     try:
         response = _client.models.generate_content(model=_MODEL, contents=prompt)
         result = _parse_response(response.text)
+    except ResourceExhausted:
+        raise  # 파이프라인의 retry 로직이 처리
     except Exception as e:
         logger.warning("Gemini 요약 실패: %s — %s", article.title[:60], e)
         return None
