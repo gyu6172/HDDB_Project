@@ -1,9 +1,9 @@
 import { Category, Subcategory } from "@/types/article";
 
-export const CATEGORY_META: Record<Category, { label: string; emoji: string; tint: string; desc: string }> = {
-  sky:  { label: "하늘", emoji: "☁️", tint: "bg-sky-from/10",  desc: "하늘에서 일어나는 자연의 이야기" },
-  land: { label: "땅",   emoji: "🌳", tint: "bg-land-from/10", desc: "땅 위에서 펼쳐지는 자연의 이야기" },
-  sea:  { label: "바다", emoji: "🌊", tint: "bg-sea-from/10",  desc: "깊고 넓은 바다의 자연 이야기" },
+export const CATEGORY_META: Record<Category, { label: string; emoji: string; gradient: string; desc: string }> = {
+  sky:  { label: "하늘", emoji: "☁️", gradient: "from-sky-from/30 to-sky-to/20",   desc: "하늘에서 일어나는 자연의 이야기" },
+  land: { label: "땅",   emoji: "🌳", gradient: "from-land-from/30 to-land-to/20", desc: "땅 위에서 펼쳐지는 자연의 이야기" },
+  sea:  { label: "바다", emoji: "🌊", gradient: "from-sea-from/25 to-sea-to/15",   desc: "깊고 넓은 바다의 자연 이야기" },
 };
 
 export const SUBCATEGORY_META: Record<Subcategory, { label: string; emoji: string }> = {
