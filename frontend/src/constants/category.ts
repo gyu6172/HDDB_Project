@@ -10,9 +10,11 @@ export const SUBCATEGORY_META: Record<Subcategory, { label: string; emoji: strin
   bird:            { label: "새",      emoji: "🪺" },
   space:           { label: "우주",    emoji: "🚀" },
   weather:         { label: "기상",    emoji: "🌤️" },
+  air_pollution:   { label: "대기오염", emoji: "🌫️" },
   disaster:        { label: "자연재해", emoji: "🌋" },
   animal:          { label: "동식물",  emoji: "🐾" },
-  pollution:       { label: "환경오염", emoji: "♻️" },
+  soil_pollution:  { label: "토양오염", emoji: "♻️" },
+  insect:          { label: "곤충",    emoji: "🦋" },
   marine_life:     { label: "해양생물", emoji: "🐠" },
   deep_sea:        { label: "심해",    emoji: "🧜‍♀️" },
   ocean_pollution: { label: "해양오염", emoji: "☠️" },
@@ -31,8 +33,8 @@ export const THUMBNAIL_BG: Record<Category, string> = {
 };
 
 export const SUBCATEGORIES: Record<Category, Subcategory[]> = {
-  sky:  ["bird", "space", "weather"],
-  land: ["disaster", "animal", "pollution"],
+  sky:  ["bird", "space", "weather", "air_pollution"],
+  land: ["disaster", "animal", "soil_pollution", "insect"],
   sea:  ["marine_life", "deep_sea", "ocean_pollution"],
 };
 

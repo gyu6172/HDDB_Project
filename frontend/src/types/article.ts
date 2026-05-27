@@ -1,9 +1,9 @@
 export type Category = "sky" | "land" | "sea";
 
 // sky
-type SkySubcategory = "bird" | "space" | "weather";
+type SkySubcategory = "bird" | "space" | "weather" | "air_pollution";
 // land
-type LandSubcategory = "disaster" | "animal" | "pollution";
+type LandSubcategory = "disaster" | "animal" | "soil_pollution" | "insect";
 // sea
 type SeaSubcategory = "marine_life" | "deep_sea" | "ocean_pollution";
 
