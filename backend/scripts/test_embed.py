@@ -2,14 +2,14 @@
 요약이 완료된 기사에 대해 임베딩 벡터를 생성하는 테스트 스크립트.
 article_keywords에 row가 없는 기사만 대상으로 합니다.
 
-실행: python test_embed.py (backend/ 디렉토리에서)
+실행: python scripts/test_embed.py (backend/ 디렉토리에서)
 """
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from sqlalchemy import not_, exists
+from sqlalchemy import exists
 from app.core.database import SessionLocal
 from app.models.article import Article
 from app.models.category import Category, Subcategory  # noqa: F401

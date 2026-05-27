@@ -2,13 +2,12 @@
 Supabase DB에서 기사 5개를 가져와 요약을 생성하고 결과를 출력하는 테스트 스크립트.
 summary가 없는 기사를 우선 선택합니다.
 
-실행: python test_summarize.py (backend/ 디렉토리에서)
+실행: python scripts/test_summarize.py (backend/ 디렉토리에서)
 """
 import sys
 import os
 
-# backend/app 모듈을 찾을 수 있도록 경로 추가
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.database import SessionLocal
 from app.models.article import Article
@@ -21,7 +20,6 @@ BATCH_SIZE = 5
 def main():
     db = SessionLocal()
     try:
-        # summary가 없는 기사 우선, 없으면 최신 기사로 fallback
         articles = (
             db.query(Article)
             .filter(Article.one_line_summary == None)  # noqa: E711
@@ -54,7 +52,6 @@ def main():
 
             result = summarize_article(article.id, db)
 
-            # DB에서 최신 상태 반영
             db.refresh(article)
 
             if result is not None:
