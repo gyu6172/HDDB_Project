@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-bg px-5 py-8">
@@ -14,6 +16,13 @@ export default function Home() {
           <p className="mt-5 text-[18px] font-semibold text-white/90 sm:text-[24px]">
             AI가 요약해 전해드릴게요!
           </p>
+
+          <Link
+            href="/main"
+            className="mt-14 inline-flex h-16 min-w-[180px] items-center justify-center rounded-2xl bg-brand px-10 text-[22px] font-bold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
+          >
+            시작하기
+          </Link>
         </div>
       </section>
     </main>
