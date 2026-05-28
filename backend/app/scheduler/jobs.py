@@ -2,15 +2,53 @@ import logging
 import os
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from sqlalchemy import not_, exists
 
+from app.core.config import settings
+from app.core.database import SessionLocal
+from app.models.article import Article
+from app.models.keyword import ArticleKeyword
 from app.services.crawler import ensure_categories_seeded, run_crawl
+from app.services.summarizer import summarize_article
+from app.services.embedder import embed_article
 
 logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler()
 
-# 크롤링 주기는 환경변수로 조정 가능 (기본 30분).
 CRAWL_INTERVAL_MIN = int(os.getenv("CRAWL_INTERVAL_MIN", "30"))
+
+
+def _ai_pipeline_job() -> None:
+    db = SessionLocal()
+    try:
+        unsummarized = (
+            db.query(Article)
+            .filter(Article.original_content != None)  # noqa: E711
+            .filter(Article.one_line_summary == None)  # noqa: E711
+            .all()
+        )
+        logger.info("AI 파이프라인: 요약 대상 %d개", len(unsummarized))
+        for article in unsummarized:
+            try:
+                summarize_article(article.id, db)
+            except Exception:  # noqa: BLE001
+                logger.exception("요약 실패: %s", article.id)
+
+        unembedded = (
+            db.query(Article)
+            .filter(Article.one_line_summary != None)  # noqa: E711
+            .filter(~exists().where(ArticleKeyword.article_id == Article.id))
+            .all()
+        )
+        logger.info("AI 파이프라인: 임베딩 대상 %d개", len(unembedded))
+        for article in unembedded:
+            try:
+                embed_article(article.id, article.title, article.paragraph_summary, db)
+            except Exception:  # noqa: BLE001
+                logger.exception("임베딩 실패: %s", article.id)
+    finally:
+        db.close()
 
 
 def _crawl_job() -> None:
@@ -24,6 +62,16 @@ def _crawl_job() -> None:
         )
     except Exception:  # noqa: BLE001 — 스케줄러 스레드가 죽지 않도록.
         logger.exception("crawl job 실패")
+        return
+
+    if not settings.enable_ai_pipeline:
+        logger.info("AI 파이프라인 비활성화 (ENABLE_AI_PIPELINE=false) — 요약/임베딩 스킵")
+        return
+
+    try:
+        _ai_pipeline_job()
+    except Exception:  # noqa: BLE001
+        logger.exception("AI 파이프라인 실패")
 
 
 def start_scheduler():
