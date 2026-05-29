@@ -6,14 +6,15 @@ interface Props {
   category: string;
   activeSubs: string[];
   activeSort: string;
+  isSelectionMode: boolean;
 }
 
-export default function Sort({ category, activeSubs, activeSort }: Props) {
+export default function Sort({ category, activeSubs, activeSort, isSelectionMode }: Props) {
   const router = useRouter();
   const hasFilter = activeSubs.length > 0;
 
   function buildUrl(sort: string) {
-    const subParam = activeSubs.length > 0 ? `sub=${activeSubs.join(",")}` : "";
+    const subParam = (activeSubs.length > 0 || isSelectionMode) ? `sub=${activeSubs.join(",")}` : "";
     const sortParam = sort === "relevance" ? "sort=relevance" : "";
     const query = [subParam, sortParam].filter(Boolean).join("&");
     return `/category/${category}${query ? `?${query}` : ""}`;

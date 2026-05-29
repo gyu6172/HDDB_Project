@@ -31,25 +31,35 @@ export default async function CategoryPage({
   const category = rawCategory as Category;
   const { label, emoji, gradient, desc } = CATEGORY_META[category];
   const subcategories = SUBCATEGORIES[category];
-  const activeSubs: Subcategory[] = sub ? (sub.split(",") as Subcategory[]) : [];
+
+  // sub 파라미터 없음 = 전체, sub="" = 아무것도 미선택, sub="bird,..." = 필터링
+  const isAllActive = sub === undefined;
+  const isEmptyState = !isAllActive && (!sub || sub.length === 0);
+  const activeSubs: Subcategory[] = (!isAllActive && sub && sub.length > 0)
+    ? (sub.split(",") as Subcategory[])
+    : [];
+
   const activeSort = (sort === "relevance" && activeSubs.length > 0) ? "relevance" : "latest";
   const PAGE_SIZE = 9;
   const currentPage = Math.max(1, Number(page) || 1);
 
-  const filtered = mockArticles
-    .filter((a) => a.category === category && (activeSubs.length === 0 || activeSubs.includes(a.subcategory)))
-    .sort((a, b) =>
-      activeSort === "relevance"
-        ? b.confidence - a.confidence
-        : new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    );
+  const filtered = isEmptyState
+    ? []
+    : mockArticles
+        .filter((a) => a.category === category && (isAllActive || activeSubs.includes(a.subcategory)))
+        .sort((a, b) =>
+          activeSort === "relevance"
+            ? b.confidence - a.confidence
+            : new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+        );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const articles = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  function buildCategoryUrl(subs: Subcategory[], newSort: string, p = 1) {
-    const subParam = subs.length > 0 ? `sub=${subs.join(",")}` : "";
+  // subs === null → sub 파라미터 없음 (전체), subs === [] → sub= (미선택)
+  function buildCategoryUrl(subs: Subcategory[] | null, newSort: string, p = 1) {
+    const subParam = subs !== null ? `sub=${subs.join(",")}` : "";
     const sortParam = newSort === "relevance" ? "sort=relevance" : "";
     const pageParam = p > 1 ? `page=${p}` : "";
     const query = [subParam, sortParam, pageParam].filter(Boolean).join("&");
@@ -57,10 +67,15 @@ export default async function CategoryPage({
   }
 
   function buildSubUrl(toggleSub: Subcategory) {
+    if (isAllActive) {
+      // 전체 상태에서 클릭 → 해당 항목만 제외한 나머지 선택
+      return buildCategoryUrl(subcategories.filter((s) => s !== toggleSub), activeSort);
+    }
     const next = activeSubs.includes(toggleSub)
       ? activeSubs.filter((s) => s !== toggleSub)
       : [...activeSubs, toggleSub];
-    return buildCategoryUrl(next, activeSort);
+    const isAll = next.length === subcategories.length;
+    return buildCategoryUrl(isAll ? null : next, activeSort);
   }
 
   return (
@@ -94,14 +109,25 @@ export default async function CategoryPage({
         </div>
       </div>
 
-      {/* 콘텐츠: 가벼운 흰색 워시 — 불투명도 조정 포인트: rgba 세 번째 인자(현재 0.72) */}
+      {/* 콘텐츠: 가벼운 흰색 워시 — 불투명도 조정 포인트: rgba 세 번째 인자(현재 0.60) */}
       <div className="relative flex-1" style={{ background: "rgba(255,255,255,0.60)" }}>
         <div className="relative max-w-6xl mx-auto px-6 py-3">
           {/* 서브카테고리 필터 + 정렬 */}
           <div className="flex items-center justify-between gap-4 mt-1 mb-5">
             <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href={isAllActive ? buildCategoryUrl([], activeSort) : buildCategoryUrl(null, activeSort)}
+                className={`px-4 py-1.5 rounded-lg text-label font-medium transition-colors ${
+                  isAllActive
+                    ? "bg-brand text-white"
+                    : "bg-card border border-line text-muted hover:border-brand hover:text-brand"
+                }`}
+              >
+                전체
+              </Link>
+              <span className="w-px h-4 bg-line mx-0.5" />
               {subcategories.map((sub) => {
-                const isActive = activeSubs.includes(sub);
+                const isActive = isAllActive || activeSubs.includes(sub);
                 const { label, emoji } = SUBCATEGORY_META[sub];
                 return (
                   <Link
@@ -122,22 +148,27 @@ export default async function CategoryPage({
               category={category}
               activeSubs={activeSubs}
               activeSort={activeSort}
+              isSelectionMode={!isAllActive}
             />
           </div>
 
           {/* 기사 목록 */}
-          {articles.length > 0 ? (
+          {isEmptyState ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted">
+              <span className="text-4xl">🔍</span>
+              <p className="text-body-sm">원하는 세부 카테고리를 선택해주세요!</p>
+            </div>
+          ) : articles.length > 0 ? (
             <>
               <div className="grid grid-cols-3 gap-x-5 gap-y-4">
                 {articles.map((article) => (
                   <ArticleCard key={article.id} article={article} />
                 ))}
               </div>
-
               <Pagination
                 currentPage={safePage}
                 totalPages={totalPages}
-                buildUrl={(p) => buildCategoryUrl(activeSubs, activeSort, p)}
+                buildUrl={(p) => buildCategoryUrl(activeSubs.length > 0 ? activeSubs : null, activeSort, p)}
               />
             </>
           ) : (
