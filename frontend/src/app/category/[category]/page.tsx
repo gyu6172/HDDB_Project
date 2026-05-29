@@ -31,7 +31,7 @@ export default async function CategoryPage({
   const { label, emoji, gradient, desc } = CATEGORY_META[category];
   const subcategories = SUBCATEGORIES[category];
   const activeSubs: Subcategory[] = sub ? (sub.split(",") as Subcategory[]) : [];
-  const activeSort = sort === "relevance" ? "relevance" : "latest";
+  const activeSort = (sort === "relevance" && activeSubs.length > 0) ? "relevance" : "latest";
 
   const articles = mockArticles
     .filter((a) => a.category === category && (activeSubs.length === 0 || activeSubs.includes(a.subcategory)))
