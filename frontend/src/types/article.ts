@@ -3,7 +3,7 @@ export type Category = "sky" | "land" | "sea";
 // sky
 type SkySubcategory = "bird" | "space" | "weather" | "air_pollution";
 // land
-type LandSubcategory = "disaster" | "animal" | "soil_pollution" | "insect";
+type LandSubcategory = "disaster" | "animal" | "ground_pollution" | "insect";
 // sea
 type SeaSubcategory = "marine_life" | "deep_sea" | "ocean_pollution";
 
