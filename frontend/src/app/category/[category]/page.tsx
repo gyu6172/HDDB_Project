@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ArticleCard from "@/components/common/ArticleCard";
 import Sort from "@/components/common/Sort";
+import Pagination from "@/components/common/Pagination";
 import BackButton from "@/components/common/BackButton";
 import SearchButton from "@/components/common/SearchButton";
 import { mockArticles } from "@/lib/mockData";
@@ -20,10 +21,10 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ category: string }>;
-  searchParams: Promise<{ sub?: string; sort?: string }>;
+  searchParams: Promise<{ sub?: string; sort?: string; page?: string }>;
 }) {
   const { category: rawCategory } = await params;
-  const { sub, sort } = await searchParams;
+  const { sub, sort, page } = await searchParams;
 
   if (!VALID_CATEGORIES.includes(rawCategory as Category)) notFound();
 
@@ -32,8 +33,10 @@ export default async function CategoryPage({
   const subcategories = SUBCATEGORIES[category];
   const activeSubs: Subcategory[] = sub ? (sub.split(",") as Subcategory[]) : [];
   const activeSort = (sort === "relevance" && activeSubs.length > 0) ? "relevance" : "latest";
+  const PAGE_SIZE = 9;
+  const currentPage = Math.max(1, Number(page) || 1);
 
-  const articles = mockArticles
+  const filtered = mockArticles
     .filter((a) => a.category === category && (activeSubs.length === 0 || activeSubs.includes(a.subcategory)))
     .sort((a, b) =>
       activeSort === "relevance"
@@ -41,10 +44,15 @@ export default async function CategoryPage({
         : new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
     );
 
-  function buildCategoryUrl(subs: Subcategory[], newSort: string) {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const articles = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  function buildCategoryUrl(subs: Subcategory[], newSort: string, p = 1) {
     const subParam = subs.length > 0 ? `sub=${subs.join(",")}` : "";
     const sortParam = newSort === "relevance" ? "sort=relevance" : "";
-    const query = [subParam, sortParam].filter(Boolean).join("&");
+    const pageParam = p > 1 ? `page=${p}` : "";
+    const query = [subParam, sortParam, pageParam].filter(Boolean).join("&");
     return `/category/${category}${query ? `?${query}` : ""}`;
   }
 
@@ -126,12 +134,11 @@ export default async function CategoryPage({
                 ))}
               </div>
 
-              {/* 더보기 버튼 — 백엔드 연결 후 동작 구현 */}
-              <div className="flex justify-center mt-10">
-                <button className="btn btn-ghost px-8" disabled>
-                  + 더보기
-                </button>
-              </div>
+              <Pagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                buildUrl={(p) => buildCategoryUrl(activeSubs, activeSort, p)}
+              />
             </>
           ) : (
             <div className="flex items-center justify-center py-24 text-muted text-body-sm">
