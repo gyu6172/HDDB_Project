@@ -1,4 +1,6 @@
 import os
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -15,6 +17,7 @@ SEARCH_THRESHOLD = float(os.getenv("SEARCH_THRESHOLD", "0.5"))
 
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=200)
+    sort: Literal["relevance", "latest"] = "relevance"
 
 
 @router.post("", response_model=list[ArticleCard])
@@ -44,6 +47,9 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
     order = {aid: i for i, aid in enumerate(article_ids)}
 
     articles = db.query(Article).filter(Article.id.in_(article_ids)).all()
-    articles.sort(key=lambda a: order[a.id])
+    if body.sort == "latest":
+        articles.sort(key=lambda a: a.published_at, reverse=True)
+    else:
+        articles.sort(key=lambda a: order[a.id])
 
     return articles
