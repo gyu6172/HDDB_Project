@@ -1,9 +1,9 @@
 """RSS 크롤러: sources.yaml 의 소스에서 최신 기사를 가져와 Ollama LLM 으로 분류 후
 메인 프로젝트 DB(articles 테이블)에 저장한다.
 
-자연 관련(하늘/땅/바다) 카테고리 중 하나 이상에 매칭되는 기사만 저장한다.
-메인 Article 은 category_id + subcategory_id 가 NOT NULL 이므로, 분류기가
-여러 슬러그를 반환해도 첫 번째 매칭을 대표 분류로 저장한다.
+자연 관련(하늘/땅/바다) 카테고리 중 하나에 매칭되는 기사만 저장한다.
+분류기는 가장 적합한 단일 카테고리와 confidence(0.0~1.0) 를 함께 반환하며,
+이 confidence 값은 articles.confidence 컬럼에 저장된다.
 """
 from __future__ import annotations
 
@@ -135,16 +135,15 @@ def _crawl_source(
             prefiltered += 1
             continue
 
-        slugs = classifier.classify(title, plain)
-        if not slugs:
+        result = classifier.classify(title, plain)
+        if not result.matched or result.slug not in sub_map:
             logger.debug("분류 결과 없음, 제외: %s", title[:60])
             skipped += 1
             continue
 
-        primary = next((sub_map[s] for s in slugs if s in sub_map), None)
-        if primary is None:
-            skipped += 1
-            continue
+        primary = sub_map[result.slug]
+        # confidence 는 0.0~1.0 범위로 보장됨 (classifier._coerce_confidence).
+        confidence = max(0.0, min(1.0, float(result.confidence)))
 
         article = Article(
             title=title[:1024],
@@ -156,6 +155,7 @@ def _crawl_source(
             thumbnail_url=_pick_thumbnail(entry),
             category_id=primary.category_id,
             subcategory_id=primary.id,
+            confidence=confidence,
         )
         session.add(article)
         session.flush()
@@ -169,7 +169,10 @@ def _crawl_source(
         except Exception:
             logger.warning("임베딩 실패, 기사는 저장됨: %s", title[:60])
         inserted += 1
-        logger.info("저장: [%s] %s", ",".join(slugs), title[:60])
+        logger.info(
+            "저장: [%s conf=%.2f] %s",
+            result.slug, confidence, title[:60],
+        )
 
     session.commit()
     return CrawlResult(

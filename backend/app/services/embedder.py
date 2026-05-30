@@ -4,13 +4,21 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.keyword import ArticleKeyword
 
-_client = genai.Client(api_key=settings.gemini_api_key)
 _MODEL = "models/gemini-embedding-001"
+_client: genai.Client | None = None
+
+
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=settings.gemini_api_key)
+    return _client
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
+    client = _get_client()
     return [
-        list(_client.models.embed_content(
+        list(client.models.embed_content(
             model=_MODEL,
             contents=text,
             config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
@@ -20,7 +28,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def embed_query(query: str) -> list[float]:
-    return list(_client.models.embed_content(
+    return list(_get_client().models.embed_content(
         model=_MODEL,
         contents=query,
         config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
