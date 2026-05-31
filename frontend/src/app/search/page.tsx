@@ -1,10 +1,25 @@
+import Link from "next/link";
 import {
   normalizeSearchCategory,
   normalizeSearchSort,
   searchArticles,
   SEARCH_CATEGORY_OPTIONS,
-  SEARCH_SORT_OPTIONS,
+  SearchCategory,
+  SearchSort,
 } from "@/lib/search";
+import SearchResultItem from "@/components/search/SearchResultItem";
+import SearchSortSelect from "@/components/search/SearchSortSelect";
+
+function buildSearchUrl(query: string, category: SearchCategory, sort: SearchSort) {
+  const params = new URLSearchParams();
+
+  if (query) params.set("q", query);
+  if (category !== "all") params.set("category", category);
+  if (sort !== "latest") params.set("sort", sort);
+
+  const nextQuery = params.toString();
+  return `/search${nextQuery ? `?${nextQuery}` : ""}`;
+}
 
 export default async function SearchPage({
   searchParams,
@@ -19,53 +34,58 @@ export default async function SearchPage({
   const searchLabel = query || "전체";
 
   return (
-    <main className="min-h-screen bg-bg px-8 py-10">
-      <section className="mx-auto flex max-w-5xl flex-col gap-8">
-        <div className="rounded-2xl border border-line bg-card px-6 py-5">
-          <p className="text-label font-semibold text-muted">검색어</p>
-          <h1 className="mt-2 text-heading font-bold text-text">{searchLabel}</h1>
-        </div>
+    <main className="min-h-screen bg-bg px-5 py-8 md:px-8">
+      <section className="mx-auto flex max-w-6xl flex-col gap-8">
+        <form action="/search" className="relative max-w-[680px]">
+          <span className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-[30px]" aria-hidden="true">
+            🔍
+          </span>
+          <input
+            type="search"
+            name="q"
+            defaultValue={query}
+            placeholder="검색어를 입력하세요"
+            className="h-[78px] w-full rounded-[38px] border-2 border-brand bg-card pl-24 pr-8 text-[24px] font-medium text-text outline-none shadow-sm transition placeholder:text-muted focus:border-brand"
+          />
+          {category !== "all" && <input type="hidden" name="category" value={category} />}
+          {sort !== "latest" && <input type="hidden" name="sort" value={sort} />}
+        </form>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-heading-sm font-bold text-text">
-              “{searchLabel}” 검색 결과 {results.length}건
-            </p>
-            <p className="mt-2 text-label text-muted">
-              category={category} · sort={sort}
-            </p>
-          </div>
+          <p className="text-heading-sm font-bold text-text">
+            “{searchLabel}” 검색 결과 {results.length}건
+          </p>
 
-          <div className="rounded-xl border border-line bg-card px-4 py-3 text-label text-muted">
-            정렬: {SEARCH_SORT_OPTIONS.find((option) => option.value === sort)?.label}
-          </div>
+          <SearchSortSelect query={query} category={category} sort={sort} />
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <nav className="flex flex-wrap gap-3" aria-label="검색 카테고리">
           {SEARCH_CATEGORY_OPTIONS.map((option) => (
-            <span
+            <Link
               key={option.value}
-              className={`rounded-full border px-4 py-2 text-label font-semibold ${
+              href={buildSearchUrl(query, option.value, sort)}
+              className={`inline-flex h-14 min-w-[78px] items-center justify-center rounded-full border px-6 text-body font-bold transition ${
                 option.value === category
                   ? "border-brand bg-brand text-white"
-                  : "border-line bg-card text-muted"
+                  : "border-line bg-card text-muted hover:border-brand hover:text-brand"
               }`}
             >
               {option.label}
-            </span>
+            </Link>
           ))}
-        </div>
+        </nav>
 
-        <div className="rounded-2xl border border-line bg-card p-6">
-          <h2 className="text-body font-bold text-text">결과 제목 목록</h2>
-          <ul className="mt-4 space-y-3">
+        {results.length > 0 ? (
+          <div className="flex flex-col gap-5">
             {results.map((article) => (
-              <li key={article.id} className="text-body-sm text-text">
-                {article.title}
-              </li>
+              <SearchResultItem key={article.id} article={article} />
             ))}
-          </ul>
-        </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-line bg-card px-6 py-20 text-center text-body text-muted">
+            검색 결과가 없어요.
+          </div>
+        )}
       </section>
     </main>
   );
