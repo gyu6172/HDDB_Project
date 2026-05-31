@@ -6,7 +6,7 @@
 
 - **FastAPI** — REST API 서버
 - **SQLAlchemy + Alembic** — ORM + DB 마이그레이션
-- **PostgreSQL** — 데이터베이스 (Docker로 실행)
+- **PostgreSQL (Supabase)** — 팀 공용 데이터베이스 (pgvector 포함)
 - **APScheduler** — 크롤링 스케줄러
 
 ---
@@ -14,9 +14,10 @@
 ## 사전 준비
 
 - Python 3.11 이상
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치 및 실행 중
+- Supabase 공용 DB 비밀번호 (팀 채널에서 별도 공유)
 
-> PostgreSQL은 별도 설치 불필요합니다. Docker로 실행합니다.
+> PostgreSQL은 별도 설치/실행 불필요합니다. 팀 공용 Supabase 인스턴스를 사용합니다.
+> 오프라인 개발이 필요하면 `docker-compose.yml`로 로컬 DB를 띄울 수 있습니다 (선택).
 
 ---
 
@@ -63,21 +64,18 @@ copy .env.example .env
 cp .env.example .env
 ```
 
-`.env` 파일은 수정 없이 그대로 사용해도 됩니다.
+`.env` 파일을 열어 `DATABASE_URL` 의 `[PASSWORD]` 부분을 팀에서 공유받은 Supabase 비밀번호로 교체하세요.
+비밀번호에 `!`, `^`, `@` 등 특수문자가 있다면 URL 인코딩(`%21`, `%5E`, `%40`)으로 바꿔야 합니다.
 
-### 4. DB 실행
+### 4. DB 마이그레이션 (선택)
 
-```bash
-docker-compose up -d
-```
-
-### 5. DB 마이그레이션
+공용 DB에는 이미 최신 스키마가 적용되어 있습니다. 새 마이그레이션이 추가됐을 때만 실행하세요.
 
 ```bash
 alembic upgrade head
 ```
 
-### 6. 서버 실행
+### 5. 서버 실행
 
 ```bash
 uvicorn app.main:app --reload --port 8000
@@ -92,14 +90,22 @@ uvicorn app.main:app --reload --port 8000
 
 ## DB 관련 명령어
 
+### 공용 DB (Supabase)
+
+- 데이터/스키마 확인: [Supabase 대시보드](https://supabase.com/dashboard/project/qtowsnliucvptzzmkwul) → Table Editor
+- 비밀번호 분실/변경: Project Settings → Database → Reset database password
+- 연결 문자열 다시 받기: 상단 `Connect` 버튼 → `Session pooler`
+
+### 로컬 DB (오프라인 개발 시에만)
+
 ```bash
-# DB 시작
+# 로컬 DB 시작 (.env의 DATABASE_URL을 localhost로 변경 필요)
 docker-compose up -d
 
-# DB 중지
+# 로컬 DB 중지
 docker-compose down
 
-# DB 초기화 (데이터 전부 삭제)
+# 로컬 DB 초기화
 docker-compose down -v
 ```
 

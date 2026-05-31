@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import re
+from dataclasses import dataclass
 from typing import Any
 
 import requests
@@ -35,6 +36,22 @@ CATEGORY_DEFS: list[tuple[str, str, str, str]] = [
 ]
 
 VALID_SLUGS = {slug for _, slug, _, _ in CATEGORY_DEFS}
+
+
+@dataclass(frozen=True)
+class ClassificationResult:
+    """분류 결과: 가장 적합한 단일 카테고리와 확신도(0.0~1.0).
+
+    - slug 가 None 이면 자연 카테고리에 해당하지 않는 기사 → 저장 대상 아님.
+    - confidence 는 항상 0.0~1.0 범위. slug 가 None 이면 0.0.
+    """
+
+    slug: str | None
+    confidence: float
+
+    @property
+    def matched(self) -> bool:
+        return self.slug is not None
 
 
 # 분명히 자연 관련 아닌 기사를 LLM 호출 전에 걸러내기 위한 키워드.
@@ -92,20 +109,71 @@ def _build_prompt(title: str, content: str) -> str:
 
     snippet = (content or "")[:1500]
 
-    return f"""당신은 뉴스 기사 분류기입니다. 아래 기사를 읽고, 자연 관련 카테고리 중 해당되는 것을 모두 선택하세요.
+    return f"""당신은 뉴스 기사 분류기입니다. 아래 기사를 읽고, 자연 관련 카테고리 중 "가장 적합한" 단 한 개를
+선택하고, 그 분류에 대한 확신도(confidence)를 0.000~1.000 사이 값으로 함께 매기세요.
+confidence 는 반드시 소수점 셋째 자리까지 표기 (예: 0.873, 0.951, 0.624). 둘째 자리에서 끊지 말 것.
 
 [카테고리 목록]
 {catalog}
 
 [분류 규칙]
-1. 자연(하늘/땅/바다)과 무관한 기사(정치, 경제, 연예, 스포츠, 일반 사회 등)이면 빈 배열을 반환.
-2. 해당되는 카테고리가 있으면 그 slug들을 배열로 반환. 여러 개 가능.
-   예: 해양 동물 관련 재난이면 ["marine_life", "disaster"].
+1. 자연(하늘/땅/바다)과 무관한 기사(정치, 경제, 연예, 스포츠, 일반 사회 등)이면
+   "category": null, "confidence": 0.0 을 반환.
+2. 해당되는 카테고리가 있으면 가장 잘 맞는 slug 한 개만 선택. 여러 개 분류 금지.
+   주제가 두 영역에 걸치면 기사의 "주된 초점" 에 해당하는 한 개를 골라라.
 3. 추측하지 말고 기사 내용에 명확히 근거가 있을 때만 분류.
-4. 반드시 다음 JSON 형식으로만 응답하세요. 다른 텍스트 금지.
+4. confidence 는 다음 기준을 따른다 (소수점 셋째 자리까지 세분화하여 부여):
+   - 0.900~1.000: 제목/본문에 명시적 근거가 있고, 다른 카테고리와 혼동의 여지가 거의 없음.
+   - 0.700~0.899: 본문 다수가 해당 주제이지만 다른 자연 카테고리와도 일부 겹침.
+   - 0.500~0.699: 해당 카테고리일 가능성이 가장 높지만 모호함이 남음.
+   - 0.500 미만: 확신이 낮다. 이 경우 차라리 category=null 을 선택하라.
+   동일 구간 내에서도 근거의 강도/혼동 가능성에 따라 셋째 자리 값을 다르게 부여하라
+   (예: 명시적 키워드 3개 이상 + 혼동 없음 = 0.97x, 키워드 1~2개 + 약한 혼동 = 0.92x).
+   0.950, 0.900 같은 라운드 넘버에 몰리지 말 것.
+5. 반드시 다음 JSON 형식으로만 응답하세요. 다른 텍스트 금지.
+
+[카테고리 구분 규칙 — 자주 헷갈리는 케이스]
+A) 해양 생물 vs 육상 동물
+   - 고래/돌고래/상어/물고기/바다거북/물범/펭귄/산호 등 바다에서 사는 생물은 반드시
+     "marine_life" 로 분류한다. 절대 "animal" 로 분류하지 말 것.
+   - "animal" 은 육상 야생/가축 동물 전용 (사자, 코끼리, 사슴, 곰, 새는 "bird" 등).
+B) 심해 vs 그 외
+   - "deep_sea" 는 (a) 심해/해저 탐사, (b) 심해 생물 발견, (c) 해저 지형/지질,
+     (d) 해저 자원·열수공 등 "수심이 깊은 바다 환경 자체" 를 다루는 기사에만 사용.
+   - 지진·해일·빙하 붕괴는 바다에서 일어나더라도 "deep_sea" 가 아니라 "disaster".
+   - 해수면 상승·해양 순환 변화·바다 온도 변화는 "deep_sea" 가 아니라 "weather"
+     (또는 해양 생태계가 주된 초점이면 "marine_life"/"ocean_pollution").
+   - 과거 지질사·산맥 형성처럼 "오래전 바다였다" 류 기사는 자연 카테고리 없음 → null.
+C) 해양 오염 vs 토양 오염
+   - 기름유출/해양 플라스틱/적조/해양 쓰레기 → "ocean_pollution".
+   - PFAS·중금속이 해안에서 발견되어도 "바다 환경 오염" 맥락이면 "ocean_pollution",
+     육상 폐기물·농지 오염이 주제면 "ground_pollution".
+D) 우주(space) 사용 제한
+   - 천문/위성/로켓/행성 등 우주 자체가 주제일 때만 "space".
+   - NASA 가 등장해도 지구·해양·기후를 관측한 기사면 "weather"/"ocean_pollution"/"marine_life" 등
+     해당 주제로 분류하고 "space" 는 쓰지 말 것.
+E) "sea wall(방조제)·연안 인프라·해수면 상승" 같이 바다가 주제인 기사는 적어도 하나의
+   sea 그룹 카테고리(marine_life / deep_sea / ocean_pollution) 또는 weather/disaster
+   중 적합한 것을 골라야 한다. 명백히 자연 기사인데 null 을 반환하지 말 것.
+
+[예시]
+- 제목: "Humpback whale breaks migration record with 15,000 km ocean journey"
+  → {{"category": "marine_life", "confidence": 0.962}}   ("animal" 아님)
+- 제목: "Scientists discover hidden brakes that stop massive earthquakes"
+  → {{"category": "disaster", "confidence": 0.918}}      ("deep_sea" 아님)
+- 제목: "Antarctic glacier collapses at record speed"
+  → {{"category": "disaster", "confidence": 0.804}}   (weather 도 가능하지만 사건성이 주된 초점)
+- 제목: "Giant squid discovery uncovers a hidden deep-sea world off Australia"
+  → {{"category": "deep_sea", "confidence": 0.873}}   (심해 환경이 주된 초점, marine_life 도 가능)
+- 제목: "High levels of toxic 'forever chemicals' found off coast of southern England"
+  → {{"category": "ocean_pollution", "confidence": 0.937}}
+- 제목: "NASA captures wild swirling clouds and rare arctic storm over Alaska"
+  → {{"category": "weather", "confidence": 0.891}}       ("space" 아님)
+- 제목: "Stock market hits record high amid earnings season"
+  → {{"category": null, "confidence": 0.000}}
 
 [출력 형식]
-{{"categories": ["slug1", "slug2"]}}
+{{"category": "slug 또는 null", "confidence": 0.000~1.000}}   ← confidence 는 소수점 셋째 자리 필수
 
 [기사 제목]
 {title}
@@ -115,10 +183,35 @@ def _build_prompt(title: str, content: str) -> str:
 """
 
 
-def _parse_response(text: str) -> list[str]:
-    """LLM 응답에서 categories 배열을 추출. 형식 어긋나면 빈 리스트."""
+_EMPTY_RESULT = ClassificationResult(slug=None, confidence=0.0)
+
+
+def _coerce_confidence(value: Any) -> float:
+    """confidence 값을 0.0~1.0 float 로 정규화. 잘못된 값은 0.0."""
+    try:
+        c = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if c != c:  # NaN
+        return 0.0
+    if c < 0.0:
+        return 0.0
+    if c > 1.0:
+        # 모델이 0~100 으로 답한 경우 등 흔한 실수 보정.
+        if c <= 100.0:
+            return min(1.0, c / 100.0)
+        return 1.0
+    return c
+
+
+def _parse_response(text: str) -> ClassificationResult:
+    """LLM 응답에서 (category, confidence) 를 추출. 형식 어긋나면 빈 결과.
+
+    하위 호환: 과거 형식 {"categories": [...]} 가 와도 첫 유효 슬러그를
+    채택하고 confidence 는 0.5 로 둔다.
+    """
     if not text:
-        return []
+        return _EMPTY_RESULT
 
     cleaned = text.strip()
     # 코드펜스(```json ... ```) 제거.
@@ -128,26 +221,38 @@ def _parse_response(text: str) -> list[str]:
     # 본문 안에 JSON 객체가 있을 수 있으니 첫 { ... } 만 추출.
     match = re.search(r"\{.*\}", cleaned, re.DOTALL)
     if not match:
-        return []
+        return _EMPTY_RESULT
     try:
         data = json.loads(match.group(0))
     except json.JSONDecodeError:
-        return []
+        return _EMPTY_RESULT
+    if not isinstance(data, dict):
+        return _EMPTY_RESULT
 
-    cats = data.get("categories") if isinstance(data, dict) else None
-    if not isinstance(cats, list):
-        return []
+    # --- 신규 형식: {"category": "...", "confidence": 0.x} ---
+    if "category" in data:
+        raw_slug = data.get("category")
+        if raw_slug is None:
+            return _EMPTY_RESULT
+        if not isinstance(raw_slug, str):
+            return _EMPTY_RESULT
+        slug = raw_slug.strip().lower()
+        if slug not in VALID_SLUGS:
+            return _EMPTY_RESULT
+        confidence = _coerce_confidence(data.get("confidence", 0.0))
+        return ClassificationResult(slug=slug, confidence=confidence)
 
-    result: list[str] = []
-    seen: set[str] = set()
-    for c in cats:
-        if not isinstance(c, str):
-            continue
-        slug = c.strip().lower()
-        if slug in VALID_SLUGS and slug not in seen:
-            result.append(slug)
-            seen.add(slug)
-    return result
+    # --- 하위 호환: {"categories": [...]} 형식 ---
+    cats = data.get("categories")
+    if isinstance(cats, list):
+        for c in cats:
+            if not isinstance(c, str):
+                continue
+            slug = c.strip().lower()
+            if slug in VALID_SLUGS:
+                return ClassificationResult(slug=slug, confidence=0.5)
+
+    return _EMPTY_RESULT
 
 
 class OllamaUnavailable(RuntimeError):
@@ -209,8 +314,12 @@ class OllamaClassifier:
                 f"설치된 모델: {sorted(installed) or '(없음)'}"
             )
 
-    def classify(self, title: str, content: str) -> list[str]:
-        """제목+본문 → 해당 카테고리 slug 리스트. 무관 기사면 []."""
+    def classify(self, title: str, content: str) -> ClassificationResult:
+        """제목+본문 → 가장 적합한 단일 카테고리 + confidence.
+
+        자연 카테고리와 무관하거나 모델 응답이 비정상이면
+        ClassificationResult(slug=None, confidence=0.0) 을 반환한다.
+        """
         prompt = _build_prompt(title, content)
         payload: dict[str, Any] = {
             "model": self._model,
@@ -233,13 +342,13 @@ class OllamaClassifier:
             r.raise_for_status()
         except requests.RequestException as exc:
             logger.warning("Ollama 호출 실패: %s", str(exc)[:200])
-            return []
+            return _EMPTY_RESULT
 
         try:
             data = r.json()
         except ValueError:
             logger.warning("Ollama 응답 JSON 파싱 실패")
-            return []
+            return _EMPTY_RESULT
 
         text = data.get("response") or ""
         return _parse_response(text)

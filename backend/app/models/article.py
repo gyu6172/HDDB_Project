@@ -16,6 +16,10 @@ class Article(Base):
         Index("ix_articles_category_id", "category_id"),
         Index("ix_articles_subcategory_id", "subcategory_id"),
         Index("ix_articles_published_at", "published_at"),
+        # sort=confidence 쿼리 가속.
+        Index("ix_articles_confidence", "confidence"),
+        # (category_id, confidence) 복합: 카테고리별 정확도 정렬에 효율적.
+        Index("ix_articles_category_confidence", "category_id", "confidence"),
     )
 
     id                = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
