@@ -11,6 +11,13 @@ export interface SearchArticlesParams {
   sort: SearchSort;
 }
 
+export type SearchCategoryCounts = Record<SearchCategory, number>;
+
+export interface SearchArticlesResult {
+  items: Article[];
+  categoryCounts: SearchCategoryCounts;
+}
+
 export const SEARCH_CATEGORY_OPTIONS: { value: SearchCategory; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "sky", label: CATEGORY_META.sky.label },
@@ -33,19 +40,38 @@ export function normalizeSearchSort(value?: string): SearchSort {
   return value === "relevance" ? "relevance" : "latest";
 }
 
-export async function searchArticles({
-  category,
-  sort,
-}: SearchArticlesParams): Promise<Article[]> {
-  const results = category === "all"
-    ? [...mockArticles]
-    : mockArticles.filter((article) => article.category === category);
-
-  return results.sort((a, b) => {
+export function sortSearchResults(articles: Article[], sort: SearchSort) {
+  return [...articles].sort((a, b) => {
     if (sort === "relevance") {
       return b.confidence - a.confidence;
     }
 
     return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
   });
+}
+
+export function getSearchCategoryCounts(articles: Article[]): SearchCategoryCounts {
+  return articles.reduce<SearchCategoryCounts>(
+    (counts, article) => {
+      counts.all += 1;
+      counts[article.category] += 1;
+      return counts;
+    },
+    { all: 0, sky: 0, land: 0, sea: 0 },
+  );
+}
+
+export async function searchArticles({
+  category,
+  sort,
+}: SearchArticlesParams): Promise<SearchArticlesResult> {
+  const categoryCounts = getSearchCategoryCounts(mockArticles);
+  const filteredResults = category === "all"
+    ? mockArticles
+    : mockArticles.filter((article) => article.category === category);
+
+  return {
+    items: sortSearchResults(filteredResults, sort),
+    categoryCounts,
+  };
 }

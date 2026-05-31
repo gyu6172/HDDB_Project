@@ -30,7 +30,7 @@ export default async function SearchPage({
   const query = params.q?.trim() ?? "";
   const category = normalizeSearchCategory(params.category);
   const sort = normalizeSearchSort(params.sort);
-  const results = await searchArticles({ query, category, sort });
+  const { items: results, categoryCounts } = await searchArticles({ query, category, sort });
   const searchLabel = query || "전체";
 
   return (
@@ -47,8 +47,6 @@ export default async function SearchPage({
             placeholder="검색어를 입력하세요"
             className="h-[78px] w-full rounded-[38px] border-2 border-brand bg-card pl-24 pr-8 text-[24px] font-medium text-text outline-none shadow-sm transition placeholder:text-muted focus:border-brand"
           />
-          {category !== "all" && <input type="hidden" name="category" value={category} />}
-          {sort !== "latest" && <input type="hidden" name="sort" value={sort} />}
         </form>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -70,7 +68,10 @@ export default async function SearchPage({
                   : "border-line bg-card text-muted hover:border-brand hover:text-brand"
               }`}
             >
-              {option.label}
+              <span>{option.label}</span>
+              <span className={option.value === category ? "ml-2 text-white" : "ml-2 text-muted"}>
+                {categoryCounts[option.value]}
+              </span>
             </Link>
           ))}
         </nav>
