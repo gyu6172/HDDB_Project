@@ -6,11 +6,17 @@ from app.core.database import get_db
 from app.models.article import Article
 from app.models.category import Category, Subcategory
 from app.schemas.article import ArticleCard, ArticleDetail, ArticleListResponse
+from app.schemas.common import ErrorResponse
 
 router = APIRouter()
 
 
-@router.get("", response_model=ArticleListResponse)
+@router.get(
+    "",
+    response_model=ArticleListResponse,
+    summary="카테고리별 기사 목록 (커서 페이지네이션)",
+    responses={422: {"model": ErrorResponse, "description": "요청 파라미터 검증 실패"}},
+)
 def list_articles(
     category:       str,
     subcategory:    str | None = None,
@@ -60,7 +66,12 @@ def list_articles(
     return ArticleListResponse(items=items, next_cursor=next_cursor)
 
 
-@router.get("/{article_id}", response_model=ArticleDetail)
+@router.get(
+    "/{article_id}",
+    response_model=ArticleDetail,
+    summary="기사 상세",
+    responses={404: {"model": ErrorResponse, "description": "기사를 찾을 수 없음"}},
+)
 def get_article(article_id: str, db: Session = Depends(get_db)):
     article = (
         db.query(Article)

@@ -7,7 +7,8 @@ from sqlalchemy import text
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.article import Article
-from app.schemas.article import ArticleCard, SearchResultCard
+from app.schemas.article import ArticleCard, SearchResultCard, SearchResultResponse
+from app.schemas.common import ErrorResponse
 from app.services.embedder import embed_query
 
 router = APIRouter()
@@ -17,8 +18,17 @@ class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=200)
     sort: Literal["relevance", "latest"] = "relevance"
 
+    model_config = {
+        "json_schema_extra": {"example": {"query": "부산항 물동량", "sort": "relevance"}}
+    }
 
-@router.post("", response_model=list[SearchResultCard])
+
+@router.post(
+    "",
+    response_model=SearchResultResponse,
+    summary="마스코트 의미 검색",
+    responses={422: {"model": ErrorResponse, "description": "요청 본문 검증 실패"}},
+)
 def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
     query_vector = embed_query(body.query)
 
@@ -39,7 +49,7 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
     ).fetchall()
 
     if not rows:
-        return []
+        return SearchResultResponse(items=[])
 
     article_ids = [r.article_id for r in rows]
     order = {aid: i for i, aid in enumerate(article_ids)}
@@ -59,12 +69,14 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
     else:
         articles.sort(key=lambda a: order[a.id])
 
-    return [
-        SearchResultCard.model_validate({
+    return SearchResultResponse(
+        items=[
+            SearchResultCard.model_validate({
                 **a.__dict__,
                 "category_rel": a.category_rel,
                 "subcategory_rel": a.subcategory_rel,
                 "similarity": similarity_map[a.id],
             })
-        for a in articles
-    ]
+            for a in articles
+        ]
+    )
