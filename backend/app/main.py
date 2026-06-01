@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
 from app.routers import articles, categories, search
 from app.scheduler.jobs import start_scheduler
 
@@ -19,6 +21,14 @@ app = FastAPI(
     ),
     openapi_tags=tags_metadata,
     servers=[{"url": "http://localhost:8000", "description": "로컬 개발 서버"}],
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(articles.router, prefix="/articles", tags=["articles"])
