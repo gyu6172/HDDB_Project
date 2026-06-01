@@ -41,11 +41,15 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
                 GROUP BY article_id
                 HAVING MIN(embedding <=> CAST(:vec AS vector)) < :threshold
                 ORDER BY min_dist
-                LIMIT 20
+                LIMIT :limit
             )
             SELECT article_id, min_dist FROM ranked
         """),
-        {"vec": str(query_vector), "threshold": settings.search_threshold},
+        {
+            "vec": str(query_vector),
+            "threshold": settings.search_threshold,
+            "limit": settings.search_top_k,
+        },
     ).fetchall()
 
     if not rows:
