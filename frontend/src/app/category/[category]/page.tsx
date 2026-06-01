@@ -154,9 +154,11 @@ export default async function CategoryPage({
 
           {/* 기사 목록 */}
           {isEmptyState ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3 text-muted">
-              <span className="text-4xl">🔍</span>
-              <p className="text-body-sm">원하는 세부 카테고리를 선택해주세요!</p>
+            <div className="flex flex-col items-center justify-center py-24 gap-3">
+              <div className="flex flex-col items-center gap-3 bg-white/60 px-8 py-6 rounded-2xl">
+                <span className="text-4xl">🔍</span>
+                <p className="text-body font-medium text-text">원하는 세부 카테고리를 선택해주세요!</p>
+              </div>
             </div>
           ) : articles.length > 0 ? (
             <>
