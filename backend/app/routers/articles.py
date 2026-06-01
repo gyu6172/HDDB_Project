@@ -1,6 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.models.article import Article
@@ -64,6 +65,37 @@ def list_articles(
     next_cursor = items[-1].id if len(items) == limit else None
 
     return ArticleListResponse(items=items, next_cursor=next_cursor)
+
+
+@router.get(
+    "/random",
+    response_model=list[ArticleCard],
+    summary="무작위 기사 (마스코트 말풍선용)",
+)
+def random_articles(
+    limit: int = Query(default=10, le=50),
+    db:    Session = Depends(get_db),
+):
+    """무작위 기사 목록.
+
+    마스코트 말풍선에 one_line_summary 를 순환 노출하는 용도.
+    요약(one_line_summary)이 없는 기사는 제외한다.
+    프론트는 진입 시 한 번 받아두고 클라이언트에서 순환시키면 된다.
+
+    NOTE: 이 라우트는 반드시 ``/{article_id}`` 보다 먼저 선언돼야 한다.
+    (그렇지 않으면 "random" 이 article_id 로 해석된다.)
+    """
+    return (
+        db.query(Article)
+        .options(
+            joinedload(Article.category_rel),
+            joinedload(Article.subcategory_rel),
+        )
+        .filter(Article.one_line_summary.isnot(None))
+        .order_by(func.random())
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get(
