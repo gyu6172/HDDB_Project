@@ -1,9 +1,9 @@
-"use client";
+import Link from "next/link";
 
 export default function SearchButton() {
   return (
-    <button
-      onClick={() => {}}
+    <Link
+      href="/search"
       className="p-1.5 text-muted hover:text-text transition-colors"
       aria-label="검색"
     >
@@ -11,6 +11,6 @@ export default function SearchButton() {
         <circle cx="11" cy="11" r="8" />
         <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
-    </button>
+    </Link>
   );
 }
