@@ -1,23 +1,24 @@
-import os
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text
+from app.core.config import settings
 from app.core.database import get_db
 from app.models.article import Article
-from app.schemas.article import ArticleCard
+from app.schemas.article import ArticleCard, SearchResultCard
 from app.services.embedder import embed_query
 
 router = APIRouter()
 
-SEARCH_THRESHOLD = float(os.getenv("SEARCH_THRESHOLD", "0.5"))
-
 
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=200)
+    sort: Literal["relevance", "latest"] = "relevance"
 
 
-@router.post("", response_model=list[ArticleCard])
+@router.post("", response_model=list[SearchResultCard])
 def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
     query_vector = embed_query(body.query)
 
@@ -32,9 +33,9 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
                 ORDER BY min_dist
                 LIMIT 20
             )
-            SELECT article_id FROM ranked
+            SELECT article_id, min_dist FROM ranked
         """),
-        {"vec": str(query_vector), "threshold": SEARCH_THRESHOLD},
+        {"vec": str(query_vector), "threshold": settings.search_threshold},
     ).fetchall()
 
     if not rows:
@@ -42,8 +43,28 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
 
     article_ids = [r.article_id for r in rows]
     order = {aid: i for i, aid in enumerate(article_ids)}
+    similarity_map = {r.article_id: round(1 - r.min_dist, 4) for r in rows}
 
-    articles = db.query(Article).filter(Article.id.in_(article_ids)).all()
-    articles.sort(key=lambda a: order[a.id])
+    articles = (
+        db.query(Article)
+        .options(
+            joinedload(Article.category_rel),
+            joinedload(Article.subcategory_rel),
+        )
+        .filter(Article.id.in_(article_ids))
+        .all()
+    )
+    if body.sort == "latest":
+        articles.sort(key=lambda a: a.published_at, reverse=True)
+    else:
+        articles.sort(key=lambda a: order[a.id])
 
-    return articles
+    return [
+        SearchResultCard.model_validate({
+                **a.__dict__,
+                "category_rel": a.category_rel,
+                "subcategory_rel": a.subcategory_rel,
+                "similarity": similarity_map[a.id],
+            })
+        for a in articles
+    ]

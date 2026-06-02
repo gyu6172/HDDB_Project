@@ -61,6 +61,10 @@ class ArticleCard(BaseModel):
         return _article_response_data(data)
 
 
+class SearchResultCard(ArticleCard):
+    similarity: float
+
+
 class ArticleDetail(ArticleCard):
     original_url:      str = Field(serialization_alias="originalUrl")
     content:           str | None = None
