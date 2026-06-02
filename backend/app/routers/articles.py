@@ -1,16 +1,23 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.models.article import Article
 from app.models.category import Category, Subcategory
 from app.schemas.article import ArticleCard, ArticleDetail, ArticleListResponse
+from app.schemas.common import ErrorResponse
 
 router = APIRouter()
 
 
-@router.get("", response_model=ArticleListResponse)
+@router.get(
+    "",
+    response_model=ArticleListResponse,
+    summary="카테고리별 기사 목록 (커서 페이지네이션)",
+    responses={422: {"model": ErrorResponse, "description": "요청 파라미터 검증 실패"}},
+)
 def list_articles(
     category:       str,
     subcategory:    str | None = None,
@@ -60,7 +67,43 @@ def list_articles(
     return ArticleListResponse(items=items, next_cursor=next_cursor)
 
 
-@router.get("/{article_id}", response_model=ArticleDetail)
+@router.get(
+    "/random",
+    response_model=list[ArticleCard],
+    summary="무작위 기사 (마스코트 말풍선용)",
+)
+def random_articles(
+    limit: int = Query(default=10, le=50),
+    db:    Session = Depends(get_db),
+):
+    """무작위 기사 목록.
+
+    마스코트 말풍선에 one_line_summary 를 순환 노출하는 용도.
+    요약(one_line_summary)이 없는 기사는 제외한다.
+    프론트는 진입 시 한 번 받아두고 클라이언트에서 순환시키면 된다.
+
+    NOTE: 이 라우트는 반드시 ``/{article_id}`` 보다 먼저 선언돼야 한다.
+    (그렇지 않으면 "random" 이 article_id 로 해석된다.)
+    """
+    return (
+        db.query(Article)
+        .options(
+            joinedload(Article.category_rel),
+            joinedload(Article.subcategory_rel),
+        )
+        .filter(Article.one_line_summary.isnot(None))
+        .order_by(func.random())
+        .limit(limit)
+        .all()
+    )
+
+
+@router.get(
+    "/{article_id}",
+    response_model=ArticleDetail,
+    summary="기사 상세",
+    responses={404: {"model": ErrorResponse, "description": "기사를 찾을 수 없음"}},
+)
 def get_article(article_id: str, db: Session = Depends(get_db)):
     article = (
         db.query(Article)
