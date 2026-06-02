@@ -11,13 +11,17 @@ import {
 import SearchResultItem from "@/components/search/SearchResultItem";
 import SearchSortSelect from "@/components/search/SearchSortSelect";
 import { SearchIcon } from "@/components/main/MainIcons";
+import Pagination from "@/components/common/Pagination";
 
-function buildSearchUrl(query: string, category: SearchCategory, sort: SearchSort) {
+const PAGE_SIZE = 10;
+
+function buildSearchUrl(query: string, category: SearchCategory, sort: SearchSort, page = 1) {
   const params = new URLSearchParams();
 
   if (query) params.set("q", query);
   if (category !== "all") params.set("category", category);
   if (sort !== "latest") params.set("sort", sort);
+  if (page > 1) params.set("page", String(page));
 
   const nextQuery = params.toString();
   return `/search${nextQuery ? `?${nextQuery}` : ""}`;
@@ -26,7 +30,7 @@ function buildSearchUrl(query: string, category: SearchCategory, sort: SearchSor
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; sort?: string; page?: string }>;
 }) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
@@ -34,6 +38,10 @@ export default async function SearchPage({
   const sort = normalizeSearchSort(params.sort);
   const { items: results, categoryCounts } = await searchArticles({ query, category, sort });
   const searchLabel = query || "전체";
+  const currentPage = Math.max(1, Number(params.page) || 1);
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedResults = results.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <main className="min-h-screen bg-bg px-5 py-8 md:px-8">
@@ -80,11 +88,18 @@ export default async function SearchPage({
         </nav>
 
         {results.length > 0 ? (
-          <div className="flex flex-col gap-5">
-            {results.map((article) => (
-              <SearchResultItem key={article.id} article={article} />
-            ))}
-          </div>
+          <>
+            <div className="flex flex-col gap-5">
+              {pagedResults.map((article) => (
+                <SearchResultItem key={article.id} article={article} />
+              ))}
+            </div>
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              buildUrl={(page) => buildSearchUrl(query, category, sort, page)}
+            />
+          </>
         ) : (
           <div className="rounded-2xl border border-line bg-card px-6 py-20 text-center text-body text-muted">
             검색 결과가 없어요.
