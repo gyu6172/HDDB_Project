@@ -19,7 +19,9 @@ class SearchRequest(BaseModel):
     sort: Literal["relevance", "latest"] = "relevance"
 
     model_config = {
-        "json_schema_extra": {"example": {"query": "부산항 물동량", "sort": "relevance"}}
+        "json_schema_extra": {
+            "example": {"query": "부산항 물동량", "sort": "relevance"}
+        }
     }
 
 
@@ -75,12 +77,14 @@ def mascot_search(body: SearchRequest, db: Session = Depends(get_db)):
 
     return SearchResultResponse(
         items=[
-            SearchResultCard.model_validate({
-                **a.__dict__,
-                "category_rel": a.category_rel,
-                "subcategory_rel": a.subcategory_rel,
-                "similarity": similarity_map[a.id],
-            })
+            SearchResultCard.model_validate(
+                {
+                    **a.__dict__,
+                    "category_rel": a.category_rel,
+                    "subcategory_rel": a.subcategory_rel,
+                    "similarity": similarity_map[a.id],
+                }
+            )
             for a in articles
         ]
     )

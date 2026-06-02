@@ -19,7 +19,8 @@ def _article_response_data(data: Any) -> Any:
         return {
             **data,
             "category": data.get("category") or _relation_key(data, "category_rel"),
-            "subcategory": data.get("subcategory") or _relation_key(data, "subcategory_rel"),
+            "subcategory": data.get("subcategory")
+            or _relation_key(data, "subcategory_rel"),
         }
 
     return {
@@ -71,8 +72,8 @@ class ParagraphSummary(BaseModel):
     )
 
     paragraph_index: int = Field(serialization_alias="paragraphIndex")
-    original_text:   str = Field(serialization_alias="originalText")
-    summary:         str
+    original_text: str = Field(serialization_alias="originalText")
+    summary: str
 
 
 class ArticleCard(BaseModel):
@@ -82,17 +83,17 @@ class ArticleCard(BaseModel):
         json_schema_extra={"example": _ARTICLE_CARD_EXAMPLE},
     )
 
-    id:               str
-    title:            str
+    id: str
+    title: str
     one_line_summary: str | None = Field(serialization_alias="oneLineSummary")
-    card_summary:     str | None = Field(serialization_alias="cardSummary")
-    source:           str
-    source_lang:      str = Field(serialization_alias="sourceLang")
-    published_at:     datetime = Field(serialization_alias="publishedAt")
-    thumbnail_url:    str | None = Field(serialization_alias="thumbnailUrl")
-    category:         str
-    subcategory:      str
-    confidence:       float | None = None
+    card_summary: str | None = Field(serialization_alias="cardSummary")
+    source: str
+    source_lang: str = Field(serialization_alias="sourceLang")
+    published_at: datetime = Field(serialization_alias="publishedAt")
+    thumbnail_url: str | None = Field(serialization_alias="thumbnailUrl")
+    category: str
+    subcategory: str
+    confidence: float | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -119,13 +120,15 @@ class ArticleDetail(ArticleCard):
                 **_ARTICLE_CARD_EXAMPLE,
                 "originalUrl": "https://example.com/news/busan-port-record",
                 "content": "Busan Port handled a record number of containers in the first quarter...",
-                "paragraphSummaries": [ParagraphSummary.model_config["json_schema_extra"]["example"]],
+                "paragraphSummaries": [
+                    ParagraphSummary.model_config["json_schema_extra"]["example"]
+                ],
             }
         },
     )
 
-    original_url:      str = Field(serialization_alias="originalUrl")
-    content:           str | None = None
+    original_url: str = Field(serialization_alias="originalUrl")
+    content: str | None = None
     paragraph_summary: list[ParagraphSummary] | None = Field(
         default=None,
         serialization_alias="paragraphSummaries",
@@ -143,7 +146,7 @@ class ArticleListResponse(BaseModel):
         },
     )
 
-    items:       list[ArticleCard]
+    items: list[ArticleCard]
     next_cursor: str | None = Field(
         serialization_alias="nextCursor",
         description="다음 페이지 요청 시 cursor 로 전달할 마지막 항목의 id. null 이면 마지막 페이지.",
