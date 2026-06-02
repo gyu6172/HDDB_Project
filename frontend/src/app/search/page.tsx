@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CATEGORY_META } from "@/constants/category";
 import {
   normalizeSearchCategory,
   normalizeSearchSort,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/search";
 import SearchResultItem from "@/components/search/SearchResultItem";
 import SearchSortSelect from "@/components/search/SearchSortSelect";
+import { SearchIcon } from "@/components/main/MainIcons";
 
 function buildSearchUrl(query: string, category: SearchCategory, sort: SearchSort) {
   const params = new URLSearchParams();
@@ -36,21 +38,19 @@ export default async function SearchPage({
   return (
     <main className="min-h-screen bg-bg px-5 py-8 md:px-8">
       <section className="mx-auto flex max-w-6xl flex-col gap-8">
-        <form action="/search" className="relative max-w-[680px]">
-          <span className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-[30px]" aria-hidden="true">
-            🔍
-          </span>
+        <form action="/search" className="relative max-w-[560px]">
+          <SearchIcon className="pointer-events-none absolute left-5 top-1/2 size-6 -translate-y-1/2 text-muted" />
           <input
             type="search"
             name="q"
             defaultValue={query}
             placeholder="검색어를 입력하세요"
-            className="h-[78px] w-full rounded-[38px] border-2 border-brand bg-card pl-24 pr-8 text-[24px] font-medium text-text outline-none shadow-sm transition placeholder:text-muted focus:border-brand"
+            className="h-14 w-full rounded-full border border-line bg-card pl-14 pr-5 text-body-sm font-semibold text-text outline-none shadow-sm transition placeholder:text-muted focus:border-brand"
           />
         </form>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-heading-sm font-bold text-text">
+          <p className="text-body font-bold text-text">
             “{searchLabel}” 검색 결과 {results.length}건
           </p>
 
@@ -62,12 +62,15 @@ export default async function SearchPage({
             <Link
               key={option.value}
               href={buildSearchUrl(query, option.value, sort)}
-              className={`inline-flex h-14 min-w-[78px] items-center justify-center rounded-full border px-6 text-body font-bold transition ${
+              className={`inline-flex items-center justify-center rounded-full px-4 py-1.5 text-label font-medium transition-colors ${
                 option.value === category
                   ? "border-brand bg-brand text-white"
                   : "border-line bg-card text-muted hover:border-brand hover:text-brand"
               }`}
             >
+              {option.value !== "all" && (
+                <span className="mr-1.5">{CATEGORY_META[option.value].emoji}</span>
+              )}
               <span>{option.label}</span>
               <span className={option.value === category ? "ml-2 text-white" : "ml-2 text-muted"}>
                 {categoryCounts[option.value]}
