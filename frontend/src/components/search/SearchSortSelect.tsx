@@ -24,16 +24,21 @@ export default function SearchSortSelect({ query, category, sort }: Props) {
   }
 
   return (
-    <select
-      value={sort}
-      onChange={(event) => handleSortChange(event.target.value as SearchSort)}
-      className="h-14 rounded-xl border border-line bg-card px-5 text-body-sm font-bold text-text outline-none transition focus:border-brand"
-    >
+    <div className="flex items-center gap-1 rounded-lg border border-line bg-card p-0.5">
       {SEARCH_SORT_OPTIONS.map((option) => (
-        <option key={option.value} value={option.value}>
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => handleSortChange(option.value)}
+          className={`rounded-md px-3 py-1 text-label font-medium transition-colors ${
+            option.value === sort
+              ? "bg-brand text-white"
+              : "text-muted hover:text-text"
+          }`}
+        >
           {option.label}
-        </option>
+        </button>
       ))}
-    </select>
+    </div>
   );
 }

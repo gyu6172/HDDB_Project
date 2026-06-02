@@ -37,19 +37,19 @@ export default function SearchResultItem({ article }: Props) {
       <div className={`min-h-[160px] bg-gradient-to-br ${THUMBNAIL_BG[category]}`} aria-hidden="true" />
 
       <article className="flex flex-col px-6 py-5 md:px-8">
-        <span className={`self-start rounded-lg px-3 py-1 text-label font-bold ${bg} ${text}`}>
+        <span className={`self-start rounded-lg px-2.5 py-1 text-caption font-semibold ${bg} ${text}`}>
           {categoryLabel} · {subcategoryLabel}
         </span>
 
-        <h2 className="mt-5 text-[22px] font-bold leading-snug text-text">
+        <h2 className="mt-4 text-body font-bold leading-snug text-text">
           {title}
         </h2>
 
-        <p className="mt-3 line-clamp-2 text-body text-muted">
+        <p className="mt-2 line-clamp-2 text-body-sm text-muted">
           {oneLineSummary}
         </p>
 
-        <div className="mt-auto pt-6 text-label font-semibold text-muted">
+        <div className="mt-auto pt-5 text-caption font-semibold text-muted">
           {source} · {formatRelativeTime(publishedAt)}
         </div>
       </article>
