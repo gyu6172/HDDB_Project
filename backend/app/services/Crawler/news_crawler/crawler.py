@@ -21,7 +21,7 @@ from .classifier import OllamaClassifier, passes_prefilter
 from .db import SessionLocal
 from .models import Article, Subcategory
 from .seed import load_sources_from_yaml
-from .text import strip_tags
+from .text import clean_for_display, strip_tags
 from app.services.embedder import embed_article
 from app.services.summarizer import summarize_article
 
@@ -148,7 +148,7 @@ def _crawl_source(
         article = Article(
             title=title[:1024],
             original_url=url,
-            original_content=raw_content,
+            original_content=clean_for_display(raw_content),
             source=source_name,
             source_lang=language,
             published_at=_parse_published(entry),
