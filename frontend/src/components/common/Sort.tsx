@@ -7,14 +7,19 @@ interface Props {
   activeSubs: string[];
   activeSort: string;
   isSelectionMode: boolean;
+  isAllActive: boolean;
 }
 
-export default function Sort({ category, activeSubs, activeSort, isSelectionMode }: Props) {
+export default function Sort({ category, activeSubs, activeSort, isSelectionMode, isAllActive }: Props) {
   const router = useRouter();
-  const hasFilter = activeSubs.length > 0;
+  const hasFilter = activeSubs.length > 0 || isAllActive;
 
   function buildUrl(sort: string) {
-    const subParam = (activeSubs.length > 0 || isSelectionMode) ? `sub=${activeSubs.join(",")}` : "";
+    const subParam = isAllActive
+      ? "sub=all"
+      : activeSubs.length > 0
+      ? `sub=${activeSubs.join(",")}`
+      : "";
     const sortParam = sort === "relevance" ? "sort=relevance" : "";
     const query = [subParam, sortParam].filter(Boolean).join("&");
     return `/category/${category}${query ? `?${query}` : ""}`;
