@@ -94,19 +94,22 @@ export default async function ArticlePage({
       <div className="max-w-5xl mx-auto px-6 py-6">
         <div className="bg-white rounded-2xl border border-line px-8 py-8">
 
-          {/* 본문 이미지 */}
-          <div className="relative w-full aspect-[3/1] rounded-xl overflow-hidden mb-8">
-            <Image src={thumbnailUrl} alt={title} fill className="object-cover" />
-          </div>
-
-          {/* 문단별 AI 요약 섹션 헤더 */}
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-body font-bold text-text">문단별 AI 요약</h2>
-            <span className="text-caption text-muted">🐾 마우스를 올리면 요약해드려요!</span>
-          </div>
-
           {/* 문단별 원문 + 요약 */}
           <div className="flex flex-col gap-7">
+
+            {/* 이미지 + AI 요약 설명 */}
+            <div className="flex gap-8">
+              <div className="flex-[1.3] relative aspect-video rounded-xl overflow-hidden">
+                <Image src={thumbnailUrl} alt={title} fill className="object-cover" />
+              </div>
+              <div className="flex-1 flex flex-col gap-2 justify-end">
+                <p className="text-body-sm font-semibold text-brand">🐾 AI 요약 안내</p>
+                <p className="text-body-sm text-muted leading-relaxed">
+                  각 문단의 핵심 내용을 AI가 한 문장으로 요약했어요.<br />
+                  원문에 마우스를 올리면 확인할 수 있어요.
+                </p>
+              </div>
+            </div>
             {paragraphSummaries.map((ps) => (
               <div key={ps.paragraph_index} className="group flex gap-8 items-start">
                 {/* 원문 */}
