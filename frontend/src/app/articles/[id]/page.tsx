@@ -99,6 +99,12 @@ export default async function ArticlePage({
             <Image src={thumbnailUrl} alt={title} fill className="object-cover" />
           </div>
 
+          {/* 문단별 AI 요약 섹션 헤더 */}
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-body font-bold text-text">문단별 AI 요약</h2>
+            <span className="text-caption text-muted">🐾 마우스를 올리면 요약해드려요!</span>
+          </div>
+
           {/* 문단별 원문 + 요약 */}
           <div className="flex flex-col gap-7">
             {paragraphSummaries.map((ps) => (
