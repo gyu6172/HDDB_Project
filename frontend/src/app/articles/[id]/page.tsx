@@ -7,7 +7,7 @@ import { CATEGORY_STYLE, SUBCATEGORY_META, CATEGORY_META } from "@/constants/cat
 import { Category } from "@/types/article";
 
 const CATEGORY_BG: Record<Category, string> = {
-  sky:  "/images/bg-sky.jpg",
+  sky:  "/images/bg-sky-2.jpg",
   land: "/images/bg-land.jpg",
   sea:  "/images/bg-sea.jpg",
 };

@@ -11,7 +11,7 @@ import { Category, Subcategory } from "@/types/article";
 import { CATEGORY_META, SUBCATEGORY_META, SUBCATEGORIES, VALID_CATEGORIES } from "@/constants/category";
 
 const CATEGORY_BG: Record<Category, string> = {
-  sky:  "/images/bg-sky.jpg",
+  sky:  "/images/bg-sky-2.jpg",
   land: "/images/bg-land.jpg",
   sea:  "/images/bg-sea.jpg",
 };
