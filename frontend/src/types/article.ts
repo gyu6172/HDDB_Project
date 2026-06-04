@@ -10,8 +10,8 @@ type SeaSubcategory = "marine_life" | "deep_sea" | "ocean_pollution";
 export type Subcategory = SkySubcategory | LandSubcategory | SeaSubcategory;
 
 export interface ParagraphSummary {
-  paragraph_index: number;
-  original_text: string;
+  paragraphIndex: number;
+  originalText: string;
   summary: string;
 }
 
@@ -20,13 +20,14 @@ export interface Article {
   id: string;
   title: string;
   oneLineSummary: string;
+  cardSummary?: string;
   source: string;
   sourceLang: "ko" | "en";
   publishedAt: string;
   thumbnailUrl: string;
   category: Category;
   subcategory: Subcategory;
-  confidence: number;
+  confidence: number | null;
 }
 
 // 상세용 — §3.3
