@@ -43,7 +43,7 @@ export function normalizeSearchSort(value?: string): SearchSort {
 export function sortSearchResults(articles: Article[], sort: SearchSort) {
   return [...articles].sort((a, b) => {
     if (sort === "relevance") {
-      return b.confidence - a.confidence;
+      return (b.confidence ?? 0) - (a.confidence ?? 0);
     }
 
     return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();

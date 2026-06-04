@@ -49,7 +49,7 @@ export default async function CategoryPage({
         .filter((a) => a.category === category && (isAllActive || activeSubs.includes(a.subcategory)))
         .sort((a, b) =>
           activeSort === "relevance"
-            ? b.confidence - a.confidence
+            ? (b.confidence ?? 0) - (a.confidence ?? 0)
             : new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
         );
 
