@@ -96,8 +96,8 @@ export default async function ArticlePage({
 
             {/* 이미지 + AI 요약 설명 */}
             <div className="flex gap-8">
-              <div className="flex-[1.3] relative aspect-video rounded-xl overflow-hidden">
-                <Image src={thumbnailUrl} alt={title} fill className="object-cover" />
+              <div className="flex-[1.3] relative aspect-video rounded-xl overflow-hidden bg-bg">
+                {thumbnailUrl && <Image src={thumbnailUrl} alt={title} fill sizes="60vw" className="object-cover" />}
               </div>
               <div className="flex-1 flex flex-col gap-2 justify-end">
                 <p className="text-body-sm font-semibold text-brand">🐾 AI 요약 안내</p>

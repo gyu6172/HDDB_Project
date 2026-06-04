@@ -172,7 +172,7 @@ export default async function CategoryPage({
               <Pagination
                 currentPage={safePage}
                 totalPages={totalPages}
-                buildUrl={(p) => buildCategoryUrl(activeSubs.length > 0 ? activeSubs : null, activeSort, p)}
+                buildUrl={(p) => buildCategoryUrl(isAllActive ? "all" : (activeSubs.length > 0 ? activeSubs : null), activeSort, p)}
               />
             </>
           ) : (
