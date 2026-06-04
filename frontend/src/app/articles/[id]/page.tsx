@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import BackButton from "@/components/common/BackButton";
-import { mockArticleDetails } from "@/lib/mockData";
+import { fetchArticleById } from "@/lib/api";
 import { CATEGORY_STYLE, SUBCATEGORY_META, CATEGORY_META } from "@/constants/category";
 import { Category } from "@/types/article";
 
@@ -18,7 +18,7 @@ export default async function ArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const article = mockArticleDetails.find((a) => a.id === id);
+  const article = await fetchArticleById(id);
 
   if (!article) notFound();
 
@@ -32,7 +32,6 @@ export default async function ArticlePage({
     category,
     subcategory,
     originalUrl,
-    content,
     paragraphSummaries,
   } = article;
 
@@ -45,8 +44,6 @@ export default async function ArticlePage({
     month: "long",
     day: "numeric",
   });
-
-  const paragraphs = content.split("\n\n").filter(Boolean);
 
   return (
     <div className="min-h-screen">
@@ -110,11 +107,11 @@ export default async function ArticlePage({
                 </p>
               </div>
             </div>
-            {paragraphSummaries.map((ps) => (
-              <div key={ps.paragraph_index} className="group flex gap-8 items-start">
+            {(paragraphSummaries ?? []).map((ps) => (
+              <div key={ps.paragraphIndex} className="group flex gap-8 items-start">
                 {/* 원문 */}
                 <p className="flex-[1.3] text-body-sm text-text leading-relaxed border-l-2 border-transparent pl-3 transition-all duration-200 group-hover:border-brand">
-                  {paragraphs[ps.paragraph_index] ?? ps.original_text}
+                  {ps.originalText}
                 </p>
                 {/* 요약 카드 */}
                 <div className="flex-1 rounded-2xl bg-bg px-4 py-3 opacity-0 translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">

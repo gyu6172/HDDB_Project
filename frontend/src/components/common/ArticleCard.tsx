@@ -22,7 +22,7 @@ export default function ArticleCard({ article }: Props) {
     <Link href={`/articles/${id}`} className="flex flex-col card card-interactive overflow-hidden">
       {/* 썸네일 */}
       <div className={`relative w-full aspect-[5/2] bg-gradient-to-br ${THUMBNAIL_BG[category]}`}>
-        <Image src={thumbnailUrl} alt={title} fill className="object-cover" />
+        {thumbnailUrl && <Image src={thumbnailUrl} alt={title} fill className="object-cover" />}
       </div>
 
       {/* 본문 */}
