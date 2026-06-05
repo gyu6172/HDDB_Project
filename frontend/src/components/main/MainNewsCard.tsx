@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import NewsItem from "./NewsItem";
 
 export type MainNews = {
+  id?: string;
   title: string;
   source: string;
   time: string;
