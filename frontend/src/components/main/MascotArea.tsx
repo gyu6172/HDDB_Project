@@ -1,12 +1,16 @@
 "use client";
 
 import { fetchRandomArticles } from "@/lib/api";
+import type { Article } from "@/types/article";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const FALLBACK_SUMMARY = "궁금한 뉴스가 있나요?";
 
+type MascotArticle = Pick<Article, "id" | "oneLineSummary">;
+
 export default function MascotArea() {
-  const [summaries, setSummaries] = useState<string[]>([FALLBACK_SUMMARY]);
+  const [articles, setArticles] = useState<MascotArticle[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -14,13 +18,13 @@ export default function MascotArea() {
 
     async function loadSummaries() {
       try {
-        const articles = await fetchRandomArticles(10);
-        const nextSummaries = articles
-          .map((article) => article.oneLineSummary?.trim())
-          .filter((summary): summary is string => Boolean(summary));
+        const randomArticles = await fetchRandomArticles(10);
+        const nextArticles = randomArticles.filter((article) =>
+          Boolean(article.oneLineSummary?.trim()),
+        );
 
-        if (isMounted && nextSummaries.length > 0) {
-          setSummaries(nextSummaries);
+        if (isMounted && nextArticles.length > 0) {
+          setArticles(nextArticles);
           setActiveIndex(0);
         }
       } catch (error) {
@@ -36,20 +40,29 @@ export default function MascotArea() {
   }, []);
 
   useEffect(() => {
-    if (summaries.length <= 1) return;
+    if (articles.length <= 1) return;
 
     const timerId = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % summaries.length);
+      setActiveIndex((index) => (index + 1) % articles.length);
     }, 5000);
 
     return () => window.clearInterval(timerId);
-  }, [summaries.length]);
+  }, [articles.length]);
+
+  const activeArticle = articles[activeIndex];
+  const summary = activeArticle?.oneLineSummary?.trim() || FALLBACK_SUMMARY;
+  const bubbleClassName =
+    "max-w-[260px] rounded-3xl bg-card px-7 py-4 text-center text-lg font-semibold leading-tight text-text shadow-sm transition-colors hover:bg-white";
 
   return (
     <div className="flex min-h-[360px] flex-col items-center justify-center gap-14">
-      <div className="max-w-[260px] rounded-3xl bg-card px-7 py-4 text-center text-lg font-semibold leading-tight text-text shadow-sm">
-        {summaries[activeIndex]}
-      </div>
+      {activeArticle ? (
+        <Link href={`/articles/${activeArticle.id}`} className={bubbleClassName}>
+          {summary}
+        </Link>
+      ) : (
+        <div className={bubbleClassName}>{summary}</div>
+      )}
 
       <div
         aria-hidden="true"
