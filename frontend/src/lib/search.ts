@@ -1,11 +1,11 @@
 import { CATEGORY_META } from "@/constants/category";
-import { mockArticles } from "@/lib/mockData";
 import { Article, Category } from "@/types/article";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export type SearchCategory = Category | "all";
 export type SearchSort = "latest" | "relevance";
+export type SearchStatus = "idle" | "success" | "error";
 
 export type SearchResultArticle = Omit<Article, "confidence"> & {
   confidence: number | null;
@@ -21,12 +21,18 @@ export interface SearchArticlesParams {
 export type SearchCategoryCounts = Record<SearchCategory, number>;
 
 export interface SearchArticlesResult {
-  items: Article[];
+  items: SearchResultArticle[];
   categoryCounts: SearchCategoryCounts;
+  status: SearchStatus;
 }
 
 interface SearchApiResponse {
   items: SearchResultArticle[];
+}
+
+interface SearchFetchResult {
+  items: SearchResultArticle[];
+  failed: boolean;
 }
 
 export const SEARCH_CATEGORY_OPTIONS: { value: SearchCategory; label: string }[] = [
@@ -51,17 +57,7 @@ export function normalizeSearchSort(value?: string): SearchSort {
   return value === "relevance" ? "relevance" : "latest";
 }
 
-export function sortSearchResults(articles: Article[], sort: SearchSort) {
-  return [...articles].sort((a, b) => {
-    if (sort === "relevance") {
-      return b.confidence - a.confidence;
-    }
-
-    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-  });
-}
-
-export function getSearchCategoryCounts(articles: Article[]): SearchCategoryCounts {
+export function getSearchCategoryCounts(articles: { category: Category }[]): SearchCategoryCounts {
   return articles.reduce<SearchCategoryCounts>(
     (counts, article) => {
       counts.all += 1;
@@ -72,39 +68,48 @@ export function getSearchCategoryCounts(articles: Article[]): SearchCategoryCoun
   );
 }
 
-export async function fetchSearchResults(query: string, sort: SearchSort): Promise<SearchResultArticle[]> {
+export async function fetchSearchResults(query: string, sort: SearchSort): Promise<SearchFetchResult> {
   const trimmedQuery = query.trim();
-  if (!trimmedQuery) return [];
+  if (!trimmedQuery) return { items: [], failed: false };
 
-  const res = await fetch(`${API_BASE_URL}/search`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: trimmedQuery,
-      sort,
-    }),
-    cache: "no-store",
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/search`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: trimmedQuery,
+        sort,
+      }),
+      cache: "no-store",
+    });
 
-  if (!res.ok) return [];
+    if (!res.ok) return { items: [], failed: true };
 
-  const data = (await res.json()) as SearchApiResponse;
-  return data.items;
+    const data = (await res.json()) as SearchApiResponse;
+    return { items: data.items, failed: false };
+  } catch {
+    return { items: [], failed: true };
+  }
 }
 
 export async function searchArticles({
+  query,
   category,
   sort,
 }: SearchArticlesParams): Promise<SearchArticlesResult> {
-  const categoryCounts = getSearchCategoryCounts(mockArticles);
+  const isIdle = query.trim().length === 0;
+  const searchResponse = await fetchSearchResults(query, sort);
+  const searchResults = searchResponse.items;
+  const categoryCounts = getSearchCategoryCounts(searchResults);
   const filteredResults = category === "all"
-    ? mockArticles
-    : mockArticles.filter((article) => article.category === category);
+    ? searchResults
+    : searchResults.filter((article) => article.category === category);
 
   return {
-    items: sortSearchResults(filteredResults, sort),
+    items: filteredResults,
     categoryCounts,
+    status: isIdle ? "idle" : searchResponse.failed ? "error" : "success",
   };
 }
