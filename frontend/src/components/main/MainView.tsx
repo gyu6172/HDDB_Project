@@ -6,7 +6,6 @@ import MascotArea from "@/components/main/MascotArea";
 import SearchDock from "@/components/main/SearchDock";
 import { CloudIcon, MountainIcon, WaveIcon } from "@/components/main/MainIcons";
 import { fetchArticlesByCategory } from "@/lib/api";
-import { MAIN_NEWS_DATA } from "@/lib/mainMockData";
 import type { Article, Category } from "@/types/article";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -43,6 +42,21 @@ const CATEGORY_TITLES: Record<Category, string> = {
 };
 
 const CATEGORIES: Category[] = ["sky", "land", "sea"];
+
+const EMPTY_MAIN_NEWS_DATA: MainNewsData = {
+  sky: {
+    title: CATEGORY_TITLES.sky,
+    items: [],
+  },
+  land: {
+    title: CATEGORY_TITLES.land,
+    items: [],
+  },
+  sea: {
+    title: CATEGORY_TITLES.sea,
+    items: [],
+  },
+};
 
 function formatRelativeTime(isoDate: string) {
   const publishedTime = new Date(isoDate).getTime();
@@ -92,7 +106,7 @@ function mergeMainData(
 
 export default function MainView() {
   const router = useRouter();
-  const [newsData, setNewsData] = useState<MainNewsData>(MAIN_NEWS_DATA);
+  const [newsData, setNewsData] = useState<MainNewsData>(EMPTY_MAIN_NEWS_DATA);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -100,7 +114,7 @@ export default function MainView() {
 
     async function loadMainNews() {
       try {
-        const responses = await Promise.all(
+        const responses = await Promise.allSettled(
           CATEGORIES.map((category) =>
             fetchArticlesByCategory(category, { limit: 3, sort: "recent" }),
           ),
@@ -109,9 +123,17 @@ export default function MainView() {
         if (!isMounted) return;
 
         const nextData = CATEGORIES.reduce<MainNewsData>(
-          (data, category, index) =>
-            mergeMainData(data, category, responses[index].items),
-          MAIN_NEWS_DATA,
+          (data, category, index) => {
+            const response = responses[index];
+
+            if (response.status !== "fulfilled") {
+              console.warn(`Failed to load ${category} news`, response.reason);
+              return data;
+            }
+
+            return mergeMainData(data, category, response.value.items);
+          },
+          EMPTY_MAIN_NEWS_DATA,
         );
 
         setNewsData(nextData);

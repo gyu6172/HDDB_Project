@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import BackButton from "@/components/common/BackButton";
 import { fetchArticleById } from "@/lib/api";
-import { CATEGORY_STYLE, SUBCATEGORY_META, CATEGORY_META } from "@/constants/category";
+import { CATEGORY_STYLE, SUBCATEGORY_META, CATEGORY_META, SUBCATEGORY_DEFAULT_IMAGE } from "@/constants/category";
 import { Category } from "@/types/article";
 
 const CATEGORY_BG: Record<Category, string> = {
@@ -97,7 +97,13 @@ export default async function ArticlePage({
             {/* 이미지 + AI 요약 설명 */}
             <div className="flex gap-8">
               <div className="flex-[1.3] relative aspect-video rounded-xl overflow-hidden bg-bg">
-                {thumbnailUrl && <Image src={thumbnailUrl} alt={title} fill sizes="60vw" className="object-cover" />}
+                <Image
+                  src={thumbnailUrl || SUBCATEGORY_DEFAULT_IMAGE[subcategory]}
+                  alt={title}
+                  fill
+                  sizes="60vw"
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1 flex flex-col gap-2 justify-end">
                 <p className="text-body-sm font-semibold text-brand">🐾 AI 요약 안내</p>

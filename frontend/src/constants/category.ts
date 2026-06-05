@@ -39,3 +39,17 @@ export const SUBCATEGORIES: Record<Category, Subcategory[]> = {
 };
 
 export const VALID_CATEGORIES: Category[] = ["sky", "land", "sea"];
+
+export const SUBCATEGORY_DEFAULT_IMAGE: Record<Subcategory, string> = {
+  bird:             "/images/default-bird.jpg",
+  space:            "/images/default-space.jpg",
+  weather:          "/images/default-weather.jpg",
+  air_pollution:    "/images/default-air_pollution.jpg",
+  disaster:         "/images/default-disaster.jpg",
+  animal:           "/images/default-animal.jpg",
+  ground_pollution: "/images/default-ground_pollution.jpg",
+  insect:           "/images/default-insect.jpg",
+  marine_life:      "/images/default-marine_life.jpg",
+  deep_sea:         "/images/default-deep_sea.jpg",
+  ocean_pollution:  "/images/default-ocean_pollution.jpg",
+};
