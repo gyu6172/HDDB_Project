@@ -2,8 +2,15 @@ import { CATEGORY_META } from "@/constants/category";
 import { mockArticles } from "@/lib/mockData";
 import { Article, Category } from "@/types/article";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
 export type SearchCategory = Category | "all";
 export type SearchSort = "latest" | "relevance";
+
+export type SearchResultArticle = Omit<Article, "confidence"> & {
+  confidence: number | null;
+  similarity: number;
+};
 
 export interface SearchArticlesParams {
   query: string;
@@ -16,6 +23,10 @@ export type SearchCategoryCounts = Record<SearchCategory, number>;
 export interface SearchArticlesResult {
   items: Article[];
   categoryCounts: SearchCategoryCounts;
+}
+
+interface SearchApiResponse {
+  items: SearchResultArticle[];
 }
 
 export const SEARCH_CATEGORY_OPTIONS: { value: SearchCategory; label: string }[] = [
@@ -59,6 +70,28 @@ export function getSearchCategoryCounts(articles: Article[]): SearchCategoryCoun
     },
     { all: 0, sky: 0, land: 0, sea: 0 },
   );
+}
+
+export async function fetchSearchResults(query: string, sort: SearchSort): Promise<SearchResultArticle[]> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) return [];
+
+  const res = await fetch(`${API_BASE_URL}/search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: trimmedQuery,
+      sort,
+    }),
+    cache: "no-store",
+  });
+
+  if (!res.ok) return [];
+
+  const data = (await res.json()) as SearchApiResponse;
+  return data.items;
 }
 
 export async function searchArticles({
