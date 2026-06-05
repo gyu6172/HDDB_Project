@@ -1,12 +1,13 @@
 import Link from "next/link";
+import InteractiveMascot from "@/components/common/InteractiveMascot";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-bg px-5 py-8">
       <section className="flex min-h-[calc(100vh-4rem)] items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,#b7dcf5_0%,#c7d9ac_55%,#6da7d2_100%)] px-6">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-20 flex h-[110px] w-[110px] items-center justify-center rounded-full bg-white/35 text-[56px] shadow-sm sm:h-[140px] sm:w-[140px] sm:text-[72px]">
-            🦦
+          <div className="mb-16 flex size-44 items-center justify-center rounded-[2rem] bg-white/35 shadow-sm sm:mb-20 sm:size-60">
+            <InteractiveMascot size="lg" />
           </div>
 
           <h1 className="text-[32px] font-bold leading-tight text-white drop-shadow-sm sm:text-[44px]">
