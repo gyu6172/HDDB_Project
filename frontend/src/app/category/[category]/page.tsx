@@ -6,7 +6,7 @@ import Sort from "@/components/common/Sort";
 import Pagination from "@/components/common/Pagination";
 import BackButton from "@/components/common/BackButton";
 import SearchButton from "@/components/common/SearchButton";
-import { mockArticles } from "@/lib/mockData";
+import { fetchArticlesByCategory } from "@/lib/api";
 import { Category, Subcategory } from "@/types/article";
 import { CATEGORY_META, SUBCATEGORY_META, SUBCATEGORIES, VALID_CATEGORIES } from "@/constants/category";
 
@@ -43,15 +43,16 @@ export default async function CategoryPage({
   const PAGE_SIZE = 9;
   const currentPage = Math.max(1, Number(page) || 1);
 
-  const filtered = isEmptyState
-    ? []
-    : mockArticles
-        .filter((a) => a.category === category && (isAllActive || activeSubs.includes(a.subcategory)))
-        .sort((a, b) =>
-          activeSort === "relevance"
-            ? (b.confidence ?? 0) - (a.confidence ?? 0)
-            : new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-        );
+  // API sort 매핑: "relevance" → "confidence", "latest" → "recent"
+  const apiSort = activeSort === "relevance" ? "confidence" : "recent";
+  const { items: allArticles } = isEmptyState
+    ? { items: [] }
+    : await fetchArticlesByCategory(category, { sort: apiSort, limit: 100 });
+
+  // 서브카테고리 클라이언트 필터 (API는 단일 subcategory만 지원)
+  const filtered = isAllActive
+    ? allArticles
+    : allArticles.filter((a) => activeSubs.includes(a.subcategory));
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -171,7 +172,7 @@ export default async function CategoryPage({
               <Pagination
                 currentPage={safePage}
                 totalPages={totalPages}
-                buildUrl={(p) => buildCategoryUrl(activeSubs.length > 0 ? activeSubs : null, activeSort, p)}
+                buildUrl={(p) => buildCategoryUrl(isAllActive ? "all" : (activeSubs.length > 0 ? activeSubs : null), activeSort, p)}
               />
             </>
           ) : (

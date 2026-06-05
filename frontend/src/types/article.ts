@@ -15,7 +15,7 @@ export interface ParagraphSummary {
   summary: string;
 }
 
-// 리스트(카드)용 — §3.2
+// 리스트(카드)용
 export interface Article {
   id: string;
   title: string;
@@ -30,9 +30,9 @@ export interface Article {
   confidence: number | null;
 }
 
-// 상세용 — §3.3
+// 상세용
 export interface ArticleDetail extends Article {
-  content: string;
+  content: string | null;
   originalUrl: string;
-  paragraphSummaries: ParagraphSummary[];
+  paragraphSummaries: ParagraphSummary[] | null;
 }
