@@ -12,6 +12,7 @@ import SearchResultItem from "@/components/search/SearchResultItem";
 import SearchSortSelect from "@/components/search/SearchSortSelect";
 import { SearchIcon } from "@/components/main/MainIcons";
 import Pagination from "@/components/common/Pagination";
+import BackButton from "@/components/common/BackButton";
 
 const PAGE_SIZE = 10;
 
@@ -46,6 +47,8 @@ export default async function SearchPage({
   return (
     <main className="min-h-screen bg-bg px-5 py-8 md:px-8">
       <section className="mx-auto flex max-w-6xl flex-col gap-8">
+        <BackButton />
+
         <form action="/search" className="relative max-w-[560px]">
           <SearchIcon className="pointer-events-none absolute left-5 top-1/2 size-6 -translate-y-1/2 text-muted" />
           <input
