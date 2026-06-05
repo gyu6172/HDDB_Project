@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CATEGORY_META, CATEGORY_STYLE, SUBCATEGORY_META, THUMBNAIL_BG } from "@/constants/category";
 import { SearchResultArticle } from "@/lib/search";
 
@@ -24,7 +25,7 @@ function formatRelativeTime(publishedAt: string) {
 }
 
 export default function SearchResultItem({ article }: Props) {
-  const { id, title, oneLineSummary, source, publishedAt, category, subcategory } = article;
+  const { id, title, oneLineSummary, source, publishedAt, thumbnailUrl, category, subcategory } = article;
   const categoryLabel = CATEGORY_META[category].label;
   const subcategoryLabel = SUBCATEGORY_META[subcategory].label;
   const { bg, text } = CATEGORY_STYLE[category];
@@ -34,7 +35,17 @@ export default function SearchResultItem({ article }: Props) {
       href={`/articles/${id}`}
       className="grid min-h-[190px] overflow-hidden rounded-2xl border border-line bg-card transition hover:-translate-y-0.5 hover:shadow-sm md:grid-cols-[220px_1fr]"
     >
-      <div className={`min-h-[160px] bg-gradient-to-br ${THUMBNAIL_BG[category]}`} aria-hidden="true" />
+      <div className={`relative min-h-[160px] bg-gradient-to-br ${THUMBNAIL_BG[category]}`}>
+        {thumbnailUrl && (
+          <Image
+            src={thumbnailUrl}
+            alt={title}
+            fill
+            sizes="(max-width: 768px) 100vw, 220px"
+            className="object-cover"
+          />
+        )}
+      </div>
 
       <article className="flex flex-col px-6 py-5 md:px-8">
         <span className={`self-start rounded-lg px-2.5 py-1 text-caption font-semibold ${bg} ${text}`}>
