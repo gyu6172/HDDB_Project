@@ -1,9 +1,16 @@
+"use client";
+
 import MainNewsCard from "@/components/main/MainNewsCard";
+import type { MainNews } from "@/components/main/MainNewsCard";
 import MainHeader from "@/components/main/MainHeader";
 import MascotArea from "@/components/main/MascotArea";
 import SearchDock from "@/components/main/SearchDock";
 import { CloudIcon, MountainIcon, WaveIcon } from "@/components/main/MainIcons";
+import { fetchArticlesByCategory } from "@/lib/api";
 import { MAIN_NEWS_DATA } from "@/lib/mainMockData";
+import type { Article, Category } from "@/types/article";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const SECTION_META = {
   sky: {
@@ -23,8 +30,111 @@ const SECTION_META = {
   },
 };
 
+type MainNewsCategory = {
+  title: string;
+  items: MainNews[];
+};
+
+type MainNewsData = Record<Category, MainNewsCategory>;
+
+const CATEGORY_TITLES: Record<Category, string> = {
+  sky: "하늘",
+  land: "땅",
+  sea: "바다",
+};
+
+const CATEGORIES: Category[] = ["sky", "land", "sea"];
+
+function formatRelativeTime(isoDate: string) {
+  const publishedTime = new Date(isoDate).getTime();
+
+  if (Number.isNaN(publishedTime)) return "방금 전";
+
+  const diffMs = Date.now() - publishedTime;
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 1) return "방금 전";
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}시간 전`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}일 전`;
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "long",
+    day: "numeric",
+  }).format(new Date(isoDate));
+}
+
+function toMainNews(article: Article): MainNews {
+  return {
+    id: article.id,
+    title: article.title,
+    source: article.source,
+    time: formatRelativeTime(article.publishedAt),
+  };
+}
+
+function mergeMainData(
+  currentData: MainNewsData,
+  category: Category,
+  articles: Article[],
+): MainNewsData {
+  return {
+    ...currentData,
+    [category]: {
+      title: CATEGORY_TITLES[category],
+      items: articles.map(toMainNews),
+    },
+  };
+}
+
 export default function MainView() {
-  const { sky, land, sea } = MAIN_NEWS_DATA;
+  const router = useRouter();
+  const [newsData, setNewsData] = useState<MainNewsData>(MAIN_NEWS_DATA);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMainNews() {
+      try {
+        const responses = await Promise.all(
+          CATEGORIES.map((category) =>
+            fetchArticlesByCategory(category, { limit: 3, sort: "recent" }),
+          ),
+        );
+
+        if (!isMounted) return;
+
+        const nextData = CATEGORIES.reduce<MainNewsData>(
+          (data, category, index) =>
+            mergeMainData(data, category, responses[index].items),
+          MAIN_NEWS_DATA,
+        );
+
+        setNewsData(nextData);
+      } catch (error) {
+        console.warn("Failed to load main news", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadMainNews();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { sky, land, sea } = newsData;
+
+  function moveToCategory(category: Category) {
+    router.push(`/category/${category}?sub=all`);
+  }
 
   return (
     <main className="min-h-screen bg-bg px-5 py-5">
@@ -38,6 +148,8 @@ export default function MainView() {
             titleClassName={SECTION_META.sky.titleClassName}
             items={sky.items}
             variant={SECTION_META.sky.variant}
+            moreLabel={isLoading ? "불러오는 중" : "더보기"}
+            onMoreClick={() => moveToCategory("sky")}
           />
 
           <div className="grid items-start gap-9 lg:grid-cols-[1fr_300px_1fr]">
@@ -47,6 +159,8 @@ export default function MainView() {
               titleClassName={SECTION_META.land.titleClassName}
               items={land.items}
               variant={SECTION_META.land.variant}
+              moreLabel={isLoading ? "불러오는 중" : "더보기"}
+              onMoreClick={() => moveToCategory("land")}
             />
 
             <MascotArea />
@@ -57,6 +171,8 @@ export default function MainView() {
               titleClassName={SECTION_META.sea.titleClassName}
               items={sea.items}
               variant={SECTION_META.sea.variant}
+              moreLabel={isLoading ? "불러오는 중" : "더보기"}
+              onMoreClick={() => moveToCategory("sea")}
             />
           </div>
 
