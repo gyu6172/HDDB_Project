@@ -36,7 +36,7 @@ export default async function SearchPage({
   const query = params.q?.trim() ?? "";
   const category = normalizeSearchCategory(params.category);
   const sort = normalizeSearchSort(params.sort);
-  const { items: results, categoryCounts } = await searchArticles({ query, category, sort });
+  const { items: results, categoryCounts, status } = await searchArticles({ query, category, sort });
   const searchLabel = query || "전체";
   const currentPage = Math.max(1, Number(params.page) || 1);
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
@@ -87,7 +87,15 @@ export default async function SearchPage({
           ))}
         </nav>
 
-        {results.length > 0 ? (
+        {status === "idle" ? (
+          <div className="rounded-2xl border border-line bg-card px-6 py-20 text-center text-body text-muted">
+            검색어를 입력해주세요.
+          </div>
+        ) : status === "error" ? (
+          <div className="rounded-2xl border border-line bg-card px-6 py-20 text-center text-body text-muted">
+            검색 결과를 불러오지 못했어요.
+          </div>
+        ) : results.length > 0 ? (
           <>
             <div className="flex flex-col gap-5">
               {pagedResults.map((article) => (
