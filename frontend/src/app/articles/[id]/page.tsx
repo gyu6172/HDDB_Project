@@ -3,8 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import BackButton from "@/components/common/BackButton";
 import { fetchArticleById } from "@/lib/api";
+import { MAIN_NEWS_DATA } from "@/lib/mainMockData";
+import { mockArticleDetails } from "@/lib/mockData";
 import { CATEGORY_STYLE, SUBCATEGORY_META, CATEGORY_META } from "@/constants/category";
-import { Category } from "@/types/article";
+import { ArticleDetail, Category, Subcategory } from "@/types/article";
 
 const CATEGORY_BG: Record<Category, string> = {
   sky:  "/images/bg-sky-2.jpg",
@@ -12,13 +14,53 @@ const CATEGORY_BG: Record<Category, string> = {
   sea:  "/images/bg-sea.jpg",
 };
 
+const DEFAULT_SUBCATEGORY: Record<Category, Subcategory> = {
+  sky: "weather",
+  land: "disaster",
+  sea: "marine_life",
+};
+
+function getMainFallbackArticle(id: string): ArticleDetail | undefined {
+  for (const [category, section] of Object.entries(MAIN_NEWS_DATA) as [Category, typeof MAIN_NEWS_DATA[Category]][]) {
+    const item = section.items.find((news) => news.id === id);
+
+    if (!item?.id) continue;
+
+    return {
+      id: item.id,
+      title: item.title,
+      oneLineSummary: "백엔드가 연결되면 실제 기사 요약과 본문을 보여줄 수 있어요.",
+      source: item.source,
+      sourceLang: "ko",
+      publishedAt: new Date().toISOString(),
+      thumbnailUrl: CATEGORY_BG[category],
+      category,
+      subcategory: DEFAULT_SUBCATEGORY[category],
+      confidence: null,
+      originalUrl: "#",
+      content: "현재 백엔드 응답을 받을 수 없어 메인 화면의 임시 기사 정보로 표시하고 있어요.",
+      paragraphSummaries: [
+        {
+          paragraphIndex: 0,
+          originalText: "현재 백엔드 응답을 받을 수 없어 메인 화면의 임시 기사 정보로 표시하고 있어요.",
+          summary: "백엔드 연결 후 실제 문단 요약으로 교체됩니다.",
+        },
+      ],
+    };
+  }
+
+  return undefined;
+}
+
 export default async function ArticlePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const article = await fetchArticleById(id);
+  const article = await fetchArticleById(id).catch(
+    () => mockArticleDetails.find((a) => a.id === id) ?? getMainFallbackArticle(id),
+  );
 
   if (!article) notFound();
 

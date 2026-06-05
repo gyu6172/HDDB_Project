@@ -47,7 +47,7 @@ export default async function CategoryPage({
   const apiSort = activeSort === "relevance" ? "confidence" : "recent";
   const { items: allArticles } = isEmptyState
     ? { items: [] }
-    : await fetchArticlesByCategory({ category, sort: apiSort, limit: 100 });
+    : await fetchArticlesByCategory(category, { sort: apiSort, limit: 100 });
 
   // 서브카테고리 클라이언트 필터 (API는 단일 subcategory만 지원)
   const filtered = isAllActive

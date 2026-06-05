@@ -20,7 +20,7 @@ export interface Article {
   id: string;
   title: string;
   oneLineSummary: string;
-  cardSummary: string;
+  cardSummary?: string;
   source: string;
   sourceLang: "ko" | "en";
   publishedAt: string;
