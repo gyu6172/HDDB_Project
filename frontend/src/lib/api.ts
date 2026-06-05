@@ -41,7 +41,7 @@ export async function fetchArticlesByCategory(
   if (options.subcategory) params.set("subcategory", options.subcategory);
   if (options.cursor) params.set("cursor", options.cursor);
 
-  return fetchJson<ArticlesResponse>(`/articles?${params.toString()}`);
+  return fetchJson<ArticlesResponse>(`/articles?${params.toString()}`, { cache: "no-store" });
 }
 
 export async function fetchRandomArticles(limit = 10): Promise<Article[]> {
@@ -50,6 +50,9 @@ export async function fetchRandomArticles(limit = 10): Promise<Article[]> {
   return fetchJson<Article[]>(`/articles/random?${params.toString()}`);
 }
 
-export async function fetchArticleById(id: string): Promise<ArticleDetail> {
-  return fetchJson<ArticleDetail>(`/articles/${id}`);
+export async function fetchArticleById(id: string): Promise<ArticleDetail | null> {
+  const res = await fetch(`${API_BASE_URL}/articles/${id}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API request failed: ${res.status}`);
+  return res.json();
 }
