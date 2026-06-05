@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { CATEGORY_META, CATEGORY_STYLE, SUBCATEGORY_META, THUMBNAIL_BG } from "@/constants/category";
-import { Article } from "@/types/article";
+import { SearchResultArticle } from "@/lib/search";
 
 interface Props {
-  article: Article;
+  article: SearchResultArticle;
 }
 
 function formatRelativeTime(publishedAt: string) {
