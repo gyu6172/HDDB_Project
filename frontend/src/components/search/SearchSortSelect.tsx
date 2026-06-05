@@ -20,7 +20,7 @@ export default function SearchSortSelect({ query, category, sort }: Props) {
     if (nextSort !== "latest") params.set("sort", nextSort);
 
     const nextQuery = params.toString();
-    router.push(`/search${nextQuery ? `?${nextQuery}` : ""}`);
+    router.replace(`/search${nextQuery ? `?${nextQuery}` : ""}`);
   }
 
   return (
