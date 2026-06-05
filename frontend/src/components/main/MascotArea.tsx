@@ -1,5 +1,6 @@
 "use client";
 
+import InteractiveMascot from "@/components/common/InteractiveMascot";
 import { fetchRandomArticles } from "@/lib/api";
 import type { Article } from "@/types/article";
 import Link from "next/link";
@@ -52,10 +53,12 @@ export default function MascotArea() {
   const activeArticle = articles[activeIndex];
   const summary = activeArticle?.oneLineSummary?.trim() || FALLBACK_SUMMARY;
   const bubbleClassName =
-    "max-w-[260px] rounded-3xl bg-card px-7 py-4 text-center text-lg font-semibold leading-tight text-text shadow-sm transition-colors hover:bg-white";
+    "relative max-w-[260px] rounded-3xl bg-card px-7 py-4 text-center text-lg font-semibold leading-tight text-text shadow-sm transition-colors before:absolute before:left-1/2 before:top-0 before:size-4 before:-translate-x-1/2 before:-translate-y-1/2 before:rotate-45 before:bg-card hover:bg-white";
 
   return (
-    <div className="flex min-h-[360px] flex-col items-center justify-center gap-14">
+    <div className="flex min-h-[360px] flex-col items-center justify-center gap-8">
+      <InteractiveMascot />
+
       {activeArticle ? (
         <Link href={`/articles/${activeArticle.id}`} className={bubbleClassName}>
           {summary}
@@ -63,13 +66,6 @@ export default function MascotArea() {
       ) : (
         <div className={bubbleClassName}>{summary}</div>
       )}
-
-      <div
-        aria-hidden="true"
-        className="flex size-32 items-center justify-center text-7xl"
-      >
-        🦦
-      </div>
     </div>
   );
 }
