@@ -73,6 +73,7 @@ export default async function SearchPage({
             <Link
               key={option.value}
               href={buildSearchUrl(query, option.value, sort)}
+              replace
               className={`inline-flex items-center justify-center rounded-full px-4 py-1.5 text-label font-medium transition-colors ${
                 option.value === category
                   ? "border-brand bg-brand text-white"
