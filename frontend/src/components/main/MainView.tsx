@@ -1,5 +1,4 @@
 import MainNewsCard from "@/components/main/MainNewsCard";
-import MainHeader from "@/components/main/MainHeader";
 import MascotArea from "@/components/main/MascotArea";
 import SearchDock from "@/components/main/SearchDock";
 import { CloudIcon, MountainIcon, WaveIcon } from "@/components/main/MainIcons";
@@ -29,9 +28,11 @@ export default function MainView() {
   return (
     <main className="min-h-screen bg-bg px-5 py-5">
       <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-[1840px] flex-col rounded-[28px] bg-[linear-gradient(180deg,#add9f3_0%,#b8d0af_50%,#6fa5cf_100%)] px-9 py-8">
-        <MainHeader />
+        <section className="grid flex-1 grid-rows-[auto_auto_auto_1fr] gap-8">
+          <div className="flex justify-center pt-1">
+            <SearchDock />
+          </div>
 
-        <section className="grid flex-1 grid-rows-[auto_auto_1fr] gap-9">
           <MainNewsCard
             icon={SECTION_META.sky.icon}
             title={sky.title}
@@ -58,10 +59,6 @@ export default function MainView() {
               items={sea.items}
               variant={SECTION_META.sea.variant}
             />
-          </div>
-
-          <div className="flex items-end justify-center pb-4">
-            <SearchDock />
           </div>
         </section>
       </div>
