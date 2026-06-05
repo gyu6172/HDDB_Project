@@ -98,7 +98,7 @@ export default async function CategoryPage({
       <div className={`backdrop-blur-[2px] bg-white/60 bg-gradient-to-br ${gradient} border-b border-black/10`}>
         <div className="max-w-6xl mx-auto px-6 pt-5 pb-8">
           <div className="flex items-center justify-between">
-            <BackButton />
+            <BackButton href="/main" />
             <SearchButton />
           </div>
           <div className="mt-4">
