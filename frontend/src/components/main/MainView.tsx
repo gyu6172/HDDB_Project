@@ -115,7 +115,7 @@ export default function MainView() {
 
     async function loadMainNews() {
       try {
-        const responses = await Promise.all(
+        const responses = await Promise.allSettled(
           CATEGORIES.map((category) =>
             fetchArticlesByCategory(category, { limit: 3, sort: "recent" }),
           ),
@@ -124,8 +124,16 @@ export default function MainView() {
         if (!isMounted) return;
 
         const nextData = CATEGORIES.reduce<MainNewsData>(
-          (data, category, index) =>
-            mergeMainData(data, category, responses[index].items),
+          (data, category, index) => {
+            const response = responses[index];
+
+            if (response.status !== "fulfilled") {
+              console.warn(`Failed to load ${category} news`, response.reason);
+              return data;
+            }
+
+            return mergeMainData(data, category, response.value.items);
+          },
           EMPTY_MAIN_NEWS_DATA,
         );
 

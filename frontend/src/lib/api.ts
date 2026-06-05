@@ -17,15 +17,49 @@ type FetchArticlesOptions = {
   cursor?: string;
 };
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, init);
+const RETRYABLE_STATUS_CODES = new Set([500, 502, 503, 504]);
 
-  if (!res.ok) {
-    const error = (await res.json().catch(() => null)) as { detail?: string } | null;
-    throw new Error(error?.detail ?? `API request failed: ${res.status}`);
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchJson<T>(
+  path: string,
+  init?: RequestInit,
+  retries = 1,
+): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const res = await fetch(`${API_BASE_URL}${path}`, init);
+
+      if (res.ok) {
+        return res.json() as Promise<T>;
+      }
+
+      const error = (await res.json().catch(() => null)) as {
+        detail?: string;
+      } | null;
+      lastError = new Error(error?.detail ?? `API request failed: ${res.status}`);
+
+      if (attempt < retries && RETRYABLE_STATUS_CODES.has(res.status)) {
+        await wait(500);
+        continue;
+      }
+
+      throw lastError;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < retries) {
+        await wait(500);
+        continue;
+      }
+    }
   }
 
-  return res.json() as Promise<T>;
+  throw lastError;
 }
 
 export async function fetchArticlesByCategory(
