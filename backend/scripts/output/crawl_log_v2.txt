@@ -1,0 +1,9 @@
+2026-06-05 20:33:52,715 INFO 서브카테고리 9개 로드: ['bird', 'space', 'weather', 'disaster', 'animal', 'ground_pollution', 'marine_life', 'deep_sea', 'ocean_pollution']
+2026-06-05 20:33:53,228 INFO RSS 수집: 경향신문 - 사회(환경/재난 포함)
+2026-06-05 20:33:53,545 INFO   -> 50개 항목 발견
+2026-06-05 20:33:54,238 INFO AFC is enabled with max remote calls: 10.
+2026-06-05 20:33:54,445 INFO HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+2026-06-05 20:33:54,445 WARNING Gemini 일시 오류 (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'm), 65초 후 재시도 (1/3)...
+2026-06-05 20:34:59,446 INFO AFC is enabled with max remote calls: 10.
+2026-06-05 20:34:59,683 INFO HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+2026-06-05 20:34:59,683 WARNING Gemini 일시 오류 (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'm), 65초 후 재시도 (2/3)...
