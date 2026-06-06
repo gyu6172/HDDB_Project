@@ -8,6 +8,9 @@
 - **SQLAlchemy + Alembic** — ORM + DB 마이그레이션
 - **PostgreSQL (Supabase)** — 팀 공용 데이터베이스 (pgvector 포함)
 - **APScheduler** — 크롤링 스케줄러
+- **Google Gemini (google-genai)** — 기사 요약 생성 및 검색용 임베딩
+- **Ollama (로컬 LLM)** — 기사 카테고리 분류 (기본 `qwen2.5:3b`)
+- **trafilatura** — 뉴스 본문 추출·정제
 
 ---
 
@@ -67,6 +70,18 @@ cp .env.example .env
 `.env` 파일을 열어 `DATABASE_URL` 의 `[PASSWORD]` 부분을 팀에서 공유받은 Supabase 비밀번호로 교체하세요.
 비밀번호에 `!`, `^`, `@` 등 특수문자가 있다면 URL 인코딩(`%21`, `%5E`, `%40`)으로 바꿔야 합니다.
 
+**환경변수 목록**
+
+| 변수                 | 필수 | 기본값                                          | 설명                                                                 |
+| -------------------- | ---- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`       | ✅   | —                                               | Supabase 연결 문자열                                                 |
+| `PORT`               |      | `8000`                                          | API 서버 포트                                                        |
+| `GEMINI_API_KEY`     | ⚠️   | (빈 값)                                         | 요약·임베딩에 필요. AI 파이프라인/검색을 쓰려면 설정                 |
+| `ENABLE_AI_PIPELINE` |      | `true`                                          | 크롤링 후 요약·임베딩 자동 실행 여부 (크롤러 단독 테스트 시 `false`) |
+| `SEARCH_THRESHOLD`   |      | `0.5`                                           | 검색 시 코사인 유사도 임계값                                         |
+| `SEARCH_TOP_K`       |      | `100`                                           | 검색 시 반환할 상위 결과 개수                                        |
+| `CORS_ORIGINS`       |      | `http://localhost:3000,http://127.0.0.1:3000`   | 쉼표로 구분된 CORS 허용 origin (prod 도메인은 여기에 추가)           |
+
 ### 4. DB 마이그레이션 (선택)
 
 공용 DB에는 이미 최신 스키마가 적용되어 있습니다. 새 마이그레이션이 추가됐을 때만 실행하세요.
@@ -119,14 +134,19 @@ backend/
 │   ├── core/
 │   │   ├── config.py        # 환경변수
 │   │   └── database.py      # DB 세션
-│   ├── models/              # SQLAlchemy 테이블 정의
+│   ├── models/              # SQLAlchemy 테이블 정의 (article/category/keyword)
 │   ├── schemas/             # Pydantic 요청/응답 스키마
-│   ├── routers/             # API 엔드포인트
-│   ├── services/            # 크롤러, AI 요약 로직
-│   ├── scheduler/           # 크롤링 스케줄러
+│   ├── routers/             # API 엔드포인트 (articles/categories/search)
+│   ├── services/            # 크롤러·요약·임베딩 로직
+│   │   ├── Crawler/             # RSS 기반 뉴스 크롤러
+│   │   ├── trafilatura_crawler/ # 본문 추출·정제 파이프라인
+│   │   ├── summarizer.py        # Gemini 요약 생성
+│   │   └── embedder.py          # 검색용 임베딩
+│   ├── scheduler/           # 크롤링 스케줄러 (APScheduler)
 │   └── main.py
 ├── alembic/                 # DB 마이그레이션
-├── docker-compose.yml       # DB 컨테이너 설정
+├── scripts/                 # AI 파이프라인 실행·점검용 스크립트
+├── docker-compose.yml       # 로컬 DB 컨테이너 설정 (선택)
 ├── .env                     # 환경변수 (git 제외)
 ├── .env.example             # 환경변수 템플릿
 └── requirements.txt
@@ -134,10 +154,14 @@ backend/
 
 ## API 엔드포인트
 
-| Method | 경로             | 설명                        |
-| ------ | ---------------- | --------------------------- |
-| GET    | `/health`        | 헬스체크                    |
-| GET    | `/articles`      | 기사 리스트 (category 필수) |
-| GET    | `/articles/{id}` | 기사 상세                   |
-| GET    | `/categories`    | 카테고리 트리               |
-| POST   | `/search`        | 마스코트 검색               |
+응답 JSON 필드는 **camelCase**, 목록 응답은 `{ items, nextCursor }` 형태(커서 페이지네이션)입니다.
+정확한 요청/응답 형태는 서버 실행 후 [Swagger](http://localhost:8000/docs)를 진실의 출처로 보세요.
+
+| Method | 경로               | 설명                                                              |
+| ------ | ------------------ | ----------------------------------------------------------------- |
+| GET    | `/health`          | 헬스체크                                                          |
+| GET    | `/articles`        | 기사 리스트. `category` 필수, `subcategory`·`sort`(`recent`/`confidence`)·`min_confidence`·`limit`·`cursor` 지원 |
+| GET    | `/articles/random` | 무작위 기사 (마스코트 말풍선용)                                   |
+| GET    | `/articles/{id}`   | 기사 상세                                                         |
+| GET    | `/categories`      | 카테고리/서브카테고리 트리                                        |
+| POST   | `/search`          | 마스코트 의미 검색 (`{ query, sort }`)                            |
