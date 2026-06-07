@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -38,7 +40,10 @@ app.include_router(search.router, prefix="/search", tags=["search"])
 
 @app.on_event("startup")
 async def startup():
-    start_scheduler()
+    # 배포 환경(읽기 전용 데모)에서는 ENABLE_SCHEDULER=false 로 크롤러/AI 파이프라인 비활성화.
+    # 기본값은 true 라 로컬 개발 동작은 그대로 유지된다.
+    if os.getenv("ENABLE_SCHEDULER", "true").lower() == "true":
+        start_scheduler()
 
 
 @app.get("/health")
