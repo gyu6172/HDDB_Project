@@ -13,3 +13,4 @@ pgvector
 PyYAML
 requests
 python-dateutil
+trafilatura
