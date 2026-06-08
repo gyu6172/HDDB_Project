@@ -1,0 +1,26 @@
+# Render Blueprint — HDDB 백엔드(FastAPI) 배포 설정.
+# 시연용: DB에 저장된 기사를 읽기 전용 API로 제공한다. 크롤러/AI 파이프라인은 끈다.
+# 시크릿(DATABASE_URL, GEMINI_API_KEY, CORS_ORIGINS)은 여기 적지 않고 Render 대시보드에서 입력한다.
+services:
+  - type: web
+    name: hddb-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"          # psycopg2-binary 휠 안정성을 위해 3.12 고정
+      - key: ENABLE_SCHEDULER
+        value: "false"           # 데모: 30분 주기 크롤러 비활성화
+      - key: ENABLE_AI_PIPELINE
+        value: "false"           # 데모: 요약/임베딩 자동 실행 비활성화
+      - key: DATABASE_URL
+        sync: false              # 대시보드에서 직접 입력 (Supabase pooler URL)
+      - key: GEMINI_API_KEY
+        sync: false              # 대시보드에서 직접 입력 (검색어 임베딩에 필요)
+      - key: CORS_ORIGINS
+        sync: false              # Vercel 도메인 확정 후 입력

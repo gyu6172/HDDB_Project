@@ -69,3 +69,10 @@ tmp/
 !.claude/commands/
 !.claude/agents/
 
+# =========================
+# 생성물 / 검증 산출물
+# =========================
+backend/openapi.json
+backend/app/services/Crawler/news.txt
+backend/app/services/Crawler/result.txt
+
