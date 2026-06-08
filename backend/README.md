@@ -81,6 +81,10 @@ cp .env.example .env
 | `SEARCH_THRESHOLD`   |      | `0.5`                                           | 검색 시 코사인 유사도 임계값                                         |
 | `SEARCH_TOP_K`       |      | `100`                                           | 검색 시 반환할 상위 결과 개수                                        |
 | `CORS_ORIGINS`       |      | `http://localhost:3000,http://127.0.0.1:3000`   | 쉼표로 구분된 CORS 허용 origin (prod 도메인은 여기에 추가)           |
+| `CRAWL_INTERVAL_MIN` |      | `30`                                            | 크롤링 스케줄러 실행 주기(분)                                        |
+| `OLLAMA_HOST`        |      | `http://localhost:11434`                        | 분류용 Ollama 서버 주소                                             |
+| `OLLAMA_MODEL`       |      | `qwen2.5:3b`                                     | 분류에 사용할 Ollama 모델                                           |
+| `OLLAMA_TIMEOUT`     |      | `120`                                           | Ollama 요청 타임아웃(초)                                            |
 
 ### 4. DB 마이그레이션 (선택)
 
